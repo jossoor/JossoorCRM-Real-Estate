@@ -223,7 +223,7 @@ import TaskIcon              from '@/components/Icons/TaskIcon.vue'
 import PinIcon               from '@/components/Icons/PinIcon.vue'
 import CollapseSidebar       from '@/components/Icons/CollapseSidebar.vue'
 import NotificationsIcon     from '@/components/Icons/NotificationsIcon.vue'
-
+import DealsIcon from '@/components/Icons/DealsIcon.vue'
 // ── Components ─────────────────────────────────────────────────────────────
 import UserDropdown  from '@/components/UserDropdown.vue'
 import Notifications from '@/components/Notifications.vue'
@@ -302,6 +302,11 @@ const mainLinks = computed(() => {
       to:    { name: 'Leads' },
       views: leadsSubLinks,
     },
+    {
+  label: 'Deals',
+  icon:  DealsIcon,
+  to:    { name: 'Deals' },
+},
     {
       label: 'Reservations',
       icon:  LucideArchive,

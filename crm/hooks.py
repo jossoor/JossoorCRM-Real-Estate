@@ -369,7 +369,7 @@ fixtures = [
     {"dt": "DocType", "filters": [
         [
             "name", "in", [
-                "CRM Lead Status"
+                "CRM Lead Status","CRM Communication Status"
             ]
         ]
     ]},

@@ -196,7 +196,7 @@
    "fieldname": "lead_type",
    "fieldtype": "Select",
    "label": "Lead Type",
-   "options": "\nOut Source\nCompany"
+   "options": "Out Source\nCompany"
   },
   {
    "fieldname": "assigned_to_display",
@@ -233,13 +233,14 @@
    "description": "FeedBack field for old data please add comment instead ",
    "fieldname": "feedback",
    "fieldtype": "Text",
-   "label": "FeedBack"
+   "label": "FeedBack",
+   "read_only": 1
   },
   {
    "fieldname": "no_of_employees",
    "fieldtype": "Select",
    "label": "No. of Employees",
-   "options": "\n1-10\n11-50\n51-200\n201-500\n501-1000\n1000+"
+   "options": "1-10\n11-50\n51-200\n201-500\n501-1000\n1000+"
   },
   {
    "fieldname": "lead_owner",
@@ -258,7 +259,6 @@
    "search_index": 1
   },
   {
-   "default": "Hot",
    "fieldname": "communication_status",
    "fieldtype": "Link",
    "label": "Communication Status",
@@ -322,13 +322,13 @@
    "fieldname": "property_city",
    "fieldtype": "Select",
    "label": "City",
-   "options": "\nCairo\nNew Cairo\nNasr City\nHeliopolis\nMaadi\n6th of October\nSheikh Zayed\nZamalek\nNew Administrative Capital\nAlexandria\nGiza"
+   "options": "Cairo\nNew Cairo\nNasr City\nHeliopolis\nMaadi\n6th of October\nSheikh Zayed\nZamalek\nNew Administrative Capital\nAlexandria\nGiza"
   },
   {
    "fieldname": "property_region",
    "fieldtype": "Select",
    "label": "Region / District",
-   "options": "\nMaadi\nDegla\nSarayat\nZohour\nNew Maadi\nHeliopolis\nNasr City\nMadinet Nasr\nZamalek\nGarden City\nDowntown Cairo\nMohandessin\nAgouza\nDokki\nShoubra\nShubra El Kheima\nNew Cairo - 1st Settlement\nNew Cairo - 5th Settlement\nNew Cairo - 3rd Settlement\nBeit El Watan\nAl Rehab City\nMadinaty\nMostakbal City\nAl Shorouk City\nAl Obour City\nNew Administrative Capital - R1\nNew Administrative Capital - R2\nNew Administrative Capital - R3\n6th of October - Hay 1\n6th of October - Hay 2\n6th of October - Hay 3\nSheikh Zayed - Hay 1\nSheikh Zayed - Hay 2\nNorth Coast\nAin Sokhna\nEl Gouna\nHurghada\nSharm El Sheikh"
+   "options": "Maadi\nDegla\nSarayat\nZohour\nNew Maadi\nHeliopolis\nNasr City\nMadinet Nasr\nZamalek\nGarden City\nDowntown Cairo\nMohandessin\nAgouza\nDokki\nShoubra\nShubra El Kheima\nNew Cairo - 1st Settlement\nNew Cairo - 5th Settlement\nNew Cairo - 3rd Settlement\nBeit El Watan\nAl Rehab City\nMadinaty\nMostakbal City\nAl Shorouk City\nAl Obour City\nNew Administrative Capital - R1\nNew Administrative Capital - R2\nNew Administrative Capital - R3\n6th of October - Hay 1\n6th of October - Hay 2\n6th of October - Hay 3\nSheikh Zayed - Hay 1\nSheikh Zayed - Hay 2\nNorth Coast\nAin Sokhna\nEl Gouna\nHurghada\nSharm El Sheikh"
   },
   {
    "fieldname": "column_break_prop1",
@@ -338,13 +338,13 @@
    "fieldname": "property_type",
    "fieldtype": "Select",
    "label": "Property Type",
-   "options": "\nResidential\nCommercial\nAdministrative\nLand"
+   "options": "Residential\nCommercial\nAdministrative\nLand"
   },
   {
    "fieldname": "property_subtype",
    "fieldtype": "Select",
    "label": "Property Subtype",
-   "options": "\nApartment\nDuplex\nPenthouse\nStudio\nVilla\nTwin House\nTownhouse\nChalet\nCabin\nShop\nShowroom\nWarehouse\nOffice\nAdministrative Office\nClinic\nPlot - Residential\nPlot - Commercial\nPlot - Industrial"
+   "options": "Apartment\nDuplex\nPenthouse\nStudio\nVilla\nTwin House\nTownhouse\nChalet\nCabin\nShop\nShowroom\nWarehouse\nOffice\nAdministrative Office\nClinic\nPlot - Residential\nPlot - Commercial\nPlot - Industrial"
   },
   {
    "fieldname": "column_break_prop2",
@@ -359,7 +359,7 @@
    "fieldname": "property_floor",
    "fieldtype": "Select",
    "label": "Floor Preference",
-   "options": "\nGround Floor\n1st Floor\n2nd Floor\n3rd Floor\n4th Floor\n5th Floor\n6th Floor\n7th Floor\n8th Floor\n9th Floor\n10th Floor\nHigh Floor (10+)\nRooftop / Penthouse\nBasement\nNo Preference"
+   "options": "Ground Floor\n1st Floor\n2nd Floor\n3rd Floor\n4th Floor\n5th Floor\n6th Floor\n7th Floor\n8th Floor\n9th Floor\n10th Floor\nHigh Floor (10+)\nRooftop / Penthouse\nBasement\nNo Preference"
   },
   {
    "fieldname": "property_details_section",
@@ -370,13 +370,13 @@
    "fieldname": "property_condition",
    "fieldtype": "Select",
    "label": "Property Condition",
-   "options": "\nNew / Off-Plan\nUnder Construction\nReady to Move\nRenovated\nNeed Repair\nOld Building"
+   "options": "New / Off-Plan\nUnder Construction\nReady to Move\nRenovated\nNeed Repair\nOld Building"
   },
   {
    "fieldname": "property_decoration",
    "fieldtype": "Select",
    "label": "Decoration Status",
-   "options": "\nFurnished\nSemi-Furnished\nUnfurnished\nCore & Shell\nSemi-Finished\nFully Finished\nSuper Lux\nUltra Lux"
+   "options": "Furnished\nSemi-Furnished\nUnfurnished\nCore & Shell\nSemi-Finished\nFully Finished\nSuper Lux\nUltra Lux"
   },
   {
    "fieldname": "column_break_prop3",
@@ -386,7 +386,7 @@
    "fieldname": "property_relation",
    "fieldtype": "Select",
    "label": "Property Relation",
-   "options": "\nStand Alone\nProject\nCompound"
+   "options": "Stand Alone\nProject\nCompound"
   },
   {
    "description": "Filled when Property Relation = Project",
@@ -417,13 +417,13 @@
    "fieldname": "property_bedrooms",
    "fieldtype": "Select",
    "label": "Bedrooms",
-   "options": "\nStudio\n1\n2\n3\n4\n5\n6+"
+   "options": "Studio\n1\n2\n3\n4\n5\n6+"
   },
   {
    "fieldname": "property_bathrooms",
    "fieldtype": "Select",
    "label": "Bathrooms",
-   "options": "\n1\n2\n3\n4\n5+"
+   "options": "1\n2\n3\n4\n5+"
   },
   {
    "fieldname": "column_break_prop5",
@@ -433,7 +433,7 @@
    "fieldname": "property_view",
    "fieldtype": "Select",
    "label": "View Preference",
-   "options": "\nStreet View\nGarden View\nPool View\nLake View\nSea View\nCity View\nNo Preference"
+   "options": "Street View\nGarden View\nPool View\nLake View\nSea View\nCity View\nNo Preference"
   },
   {
    "fieldname": "property_finishing",
@@ -444,7 +444,7 @@
    "fieldname": "property_features",
    "fieldtype": "Select",
    "label": "Key Feature",
-   "options": "\nPrivate Garden\nPrivate Pool\nShared Pool\nGym\nGarage\nElevator\nSecurity / Gated\nSmart Home\nSea Access\nLake / Lagoon\nGolf Course View\nPet Friendly\nStorage Room\nMaid Room\nDriver Room"
+   "options": "Private Garden\nPrivate Pool\nShared Pool\nGym\nGarage\nElevator\nSecurity / Gated\nSmart Home\nSea Access\nLake / Lagoon\nGolf Course View\nPet Friendly\nStorage Room\nMaid Room\nDriver Room"
   },
   {
    "fieldname": "financial_preferences_section",
@@ -468,7 +468,8 @@
   {
    "fieldname": "property_payment",
    "fieldtype": "Select",
-   "options": "\nCash\nInstallments\nMortgage"
+   "label": "Payment Method",
+   "options": "Cash\nInstallments\nMortgage"
   },
   {
    "fieldname": "property_down_payment",
@@ -483,7 +484,7 @@
    "fieldname": "property_ownership",
    "fieldtype": "Select",
    "label": "Ownership Type",
-   "options": "\nBuy\nRent\nRent-to-Own"
+   "options": "Buy\nRent\nRent-to-Own"
   },
   {
    "fieldname": "notes_section",
@@ -736,7 +737,7 @@
  "image_field": "image",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-01 14:02:38.719453",
+ "modified": "2026-04-05 18:17:12.266951",
  "modified_by": "Administrator",
  "module": "FCRM",
  "name": "CRM Lead",
