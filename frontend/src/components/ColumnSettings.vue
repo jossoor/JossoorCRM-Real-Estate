@@ -116,6 +116,9 @@
                 "
                 :debounce="500"
               />
+              <p v-if="widthError" class="sm:w-full w-52 text-xs text-red-500 -mt-2">
+                {{ widthError }}
+              </p>
             </div>
             <div class="flex w-full gap-2 border-t pt-2">
               <Button
@@ -128,6 +131,7 @@
                 variant="solid"
                 :label="__('Update')"
                 class="w-full flex-1"
+                :disabled="!!widthError"
                 @click="updateColumn(column)"
               />
             </div>
@@ -177,6 +181,56 @@ const column = ref({
   label: '',
   key: '',
   width: '10rem',
+})
+
+const MIN_WIDTH_PX = 30
+const MAX_WIDTH_PX = 500
+
+function parseWidthToPx(value) {
+  const raw = String(value ?? '').trim().toLowerCase()
+
+  if (!raw) return NaN
+
+  if (/^\d+(\.\d+)?$/.test(raw)) {
+    return parseFloat(raw) * 16 // plain number => rem
+  }
+
+  if (raw.endsWith('rem')) {
+    return parseFloat(raw) * 16
+  }
+
+  if (raw.endsWith('px')) {
+    return parseFloat(raw)
+  }
+
+  return NaN
+}
+
+function isValidWidth(value) {
+  const px = parseWidthToPx(value)
+  return !Number.isNaN(px) && px >= MIN_WIDTH_PX && px <= MAX_WIDTH_PX
+}
+
+const widthError = computed(() => {
+  if (!edit.value) return ''
+
+  const raw = String(column.value.width ?? '').trim()
+  if (!raw) return __('Width is required')
+
+  const px = parseWidthToPx(raw)
+  if (Number.isNaN(px)) {
+    return __('Width must be a number, px, or rem (e.g. 3, 30px, 10rem)')
+  }
+
+  if (px < MIN_WIDTH_PX) {
+    return __('Minimum width is 30px (or 1.875rem)')
+  }
+
+  if (px > MAX_WIDTH_PX) {
+    return __('Maximum width is 500px (or 31.25rem)')
+  }
+
+  return ''
 })
 
 const is_default = computed({
@@ -241,10 +295,12 @@ function editColumn(c) {
 }
 
 function updateColumn(c) {
+  if (!isValidWidth(c.width)) return
+
   edit.value = false
   let index = columns.value.findIndex((column) => column.key === c.key)
   columns.value[index].label = c.label
-  columns.value[index].width = c.width
+  columns.value[index].width = String(c.width).trim()
 
   if (columns.value[index].old) {
     delete columns.value[index].old

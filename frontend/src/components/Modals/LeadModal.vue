@@ -32,18 +32,20 @@
 
             <!-- first_name → Data, reqd -->
             <FieldWrap :label="__('First Name')" required>
-              <input v-model="lead.doc.first_name" type="text" class="fi"
+              <input v-model="lead.doc.first_name" type="text" class="fi" maxlength="140"
                 :class="{ 'border-red-400 bg-red-50': fieldError === 'first_name' }" />
             </FieldWrap>
 
             <!-- last_name → Data -->
             <FieldWrap :label="__('Last Name')">
-              <input v-model="lead.doc.last_name" type="text" class="fi" />
+              <input v-model="lead.doc.last_name" type="text" class="fi" maxlength="140" 
+                :class="{ 'border-red-400 bg-red-50': fieldError === 'last_name' }" />
             </FieldWrap>
 
             <!-- gender → Link: Gender — rendered as radios -->
-            <FieldWrap :label="__('Gender')">
-              <div class="flex gap-4 h-10 items-center">
+            <FieldWrap :label="__('Gender')" required>
+              <div class="flex gap-4 h-10 items-center rounded-lg px-2"
+                :class="{ 'border border-red-400 bg-red-50': fieldError === 'gender' }">
                 <RadioBtn v-model="lead.doc.gender" value="Male"   :label="__('Male')"   name="gender" />
                 <RadioBtn v-model="lead.doc.gender" value="Female" :label="__('Female')" name="gender" />
               </div>
@@ -51,19 +53,20 @@
 
             <!-- email → Data/Email -->
             <FieldWrap :label="__('Email')">
-              <input v-model="lead.doc.email" type="email" class="fi"
+              <input v-model="lead.doc.email" type="email" class="fi" maxlength="140"
                 :class="{ 'border-red-400 bg-red-50': fieldError === 'email' }" />
             </FieldWrap>
 
             <!-- mobile_no → Data/Phone, reqd -->
             <FieldWrap :label="__('Mobile No')" required>
-              <input v-model="lead.doc.mobile_no" type="tel" class="fi"
+              <input v-model="lead.doc.mobile_no" type="tel" class="fi" maxlength="20"
                 :class="{ 'border-red-400 bg-red-50': fieldError === 'mobile_no' }" />
             </FieldWrap>
 
             <!-- phone → Data/Phone -->
             <FieldWrap :label="__('Other Phone')">
-              <input v-model="lead.doc.phone" type="tel" class="fi" />
+              <input v-model="lead.doc.phone" type="tel" class="fi" maxlength="20"
+                :class="{ 'border-red-400 bg-red-50': fieldError === 'phone' }" />
             </FieldWrap>
 
             <!-- source → Link: CRM Lead Source (backend) -->
@@ -231,7 +234,9 @@
                 </div>
                 <input v-if="lead.doc.property_relation === 'Project'"
                   v-model="lead.doc.property_project"
-                  type="text" class="fi" :placeholder="__('Enter project name...')" />
+                  type="text" class="fi" maxlength="140"
+                  :class="{ 'border-red-400 bg-red-50': fieldError === 'property_project' }"
+                  :placeholder="__('Enter project name...')" />
               </FieldWrap>
 
               <!-- property_year_built → Int -->
@@ -321,9 +326,11 @@
 
               <!-- Notes → Text Editor -->
               <PropCard :title="__('Notes')">
-                <textarea v-model="lead.doc.notes"
-                  class="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700
-                         resize-none focus:outline-none focus:border-[#4A90E2] transition-colors"
+                <textarea v-model="lead.doc.notes" maxlength="1000"
+                  :class="[
+                    'w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#4A90E2] transition-colors',
+                    fieldError === 'notes' ? 'border-red-400 bg-red-50' : ''
+                  ]"
                   rows="4" :placeholder="__('Add any additional notes...')" />
               </PropCard>
 
@@ -686,7 +693,15 @@ const units = createResource({
 })
 
 // ─── Create Lead ──────────────────────────────────────────────────────────────
+const exceedsMax = (value, max) => (value || '').length > max
 const createLead = createResource({ url: 'frappe.client.insert' })
+function stripHtml(html) {
+  return (html || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .trim()
+}
+
 
 async function createNewLead() {
   await triggerOnBeforeCreate?.()
@@ -703,19 +718,68 @@ async function createNewLead() {
           error.value = __('First Name is mandatory')
           return error.value
         }
-        if (!lead.doc.mobile_no) {
-          fieldError.value = 'mobile_no'
-          error.value = __('Mobile No is mandatory')
-          return error.value
-        }
-        if (isNaN(lead.doc.mobile_no.replace(/[-+() ]/g, ''))) {
+
+        const mobileDigits = (lead.doc.mobile_no || '').replace(/\D/g, '')
+
+        if (!mobileDigits) {
           fieldError.value = 'mobile_no'
           error.value = __('Mobile No must be a valid number')
+          return error.value
+        }
+
+        if (mobileDigits.length < 11) {
+          fieldError.value = 'mobile_no'
+          error.value = __('Mobile number must be at least 11 digits.')
           return error.value
         }
         if (lead.doc.email && !lead.doc.email.includes('@')) {
           fieldError.value = 'email'
           error.value = __('Invalid Email address')
+          return error.value
+        }
+        if (exceedsMax(lead.doc.first_name, 140)) {
+          fieldError.value = 'first_name'
+          error.value = __('First Name cannot exceed 140 characters')
+          return error.value
+        }
+
+        if (exceedsMax(lead.doc.last_name, 140)) {
+          fieldError.value = 'last_name'
+          error.value = __('Last Name cannot exceed 140 characters')
+          return error.value
+        }
+
+        if (exceedsMax(lead.doc.email, 140)) {
+          fieldError.value = 'email'
+          error.value = __('Email cannot exceed 140 characters')
+          return error.value
+        }
+
+        if (exceedsMax(lead.doc.mobile_no, 20)) {
+          fieldError.value = 'mobile_no'
+          error.value = __('Mobile No cannot exceed 20 characters')
+          return error.value
+        }
+
+        if (exceedsMax(lead.doc.phone, 20)) {
+          fieldError.value = 'phone'
+          error.value = __('Other Phone cannot exceed 20 characters')
+          return error.value
+        }
+
+        if (exceedsMax(lead.doc.property_project, 140)) {
+          fieldError.value = 'property_project'
+          error.value = __('Project Name cannot exceed 140 characters')
+          return error.value
+        }
+        if (exceedsMax(lead.doc.notes, 1000)) {
+          fieldError.value = 'notes'
+          error.value = __('Notes cannot exceed 1000 characters')
+          return error.value
+        }
+        if (!lead.doc.gender) {
+          fieldError.value = 'gender'
+          error.value = __('Gender is mandatory')
           return error.value
         }
         if (!lead.doc.status) {
@@ -751,8 +815,10 @@ async function createNewLead() {
       },
       onError(err) {
         isLeadCreating.value = false
-        error.value = err.messages ? err.messages.join('\n') : err.message
-      },
+
+        const rawMessage = err.messages ? err.messages.join('\n') : err.message
+        error.value = stripHtml(rawMessage)
+      }
     },
   )
 }

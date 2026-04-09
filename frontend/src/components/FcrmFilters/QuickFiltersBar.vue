@@ -5,16 +5,17 @@
       <div class="flex flex-wrap items-center gap-2 max-w-full sm:flex-nowrap sm:items-center">
         <!-- Search pill -->
         <div
-          class="relative flex h-9 items-center rounded-lg border border-gray-300 bg-white pl-2 pr-2 text-sm shadow-sm
+          class="relative flex h-9 items-center rounded-lg border border-gray-300 bg-white pl-2 pr-2 text-sm
                  text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
         >
           <FeatherIcon name="search" class="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2 shrink-0" />
           <input
             v-model="search"
-            class="bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 text-sm
-                   min-w-[150px] w-[11rem] sm:w-[14rem]"
+            class="bg-transparent border-0 ring-0 outline-none shadow-none focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none
+                  placeholder-gray-400 dark:placeholder-gray-500 text-sm
+                  min-w-[150px] w-[11rem] sm:w-[14rem]"
             :placeholder="__('Search name / phone…')"
-            type="search"
+            type="text"
             @keydown.enter.prevent="runSearchLike"
           />
         </div>
@@ -130,7 +131,12 @@
               class="flex h-full items-center gap-1.5 px-2 rounded-l cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
             >
               <FeatherIcon name="calendar" class="h-3.5 w-3.5 opacity-70" />
-              <span class="max-w-[150px] truncate">{{ displayDateRange }}</span>
+              <span
+                class="whitespace-nowrap"
+                :title="displayDateRange"
+              >
+                {{ displayDateRange }}
+              </span>
             </button>
             <button
               v-if="lastFrom || lastTo"
@@ -290,6 +296,8 @@ const lastTo = computed({
   get: () => ui.value.last_contacted_to || '',
   set: v  => { ui.value.last_contacted_to = v || '' }
 })
+
+const hasSearched = ref(false)
 
 /* ---------- option normalization ---------- */
 function normalizeOptions(arr = []) {
@@ -465,6 +473,12 @@ function buildFiltersPayload() {
   // Last contacted → convert to >= / <= so backend never sees ad-hoc objects
   const f = lastFrom.value
   const t = lastTo.value
+
+  if (f && t && f > t) {
+    filters.push({ fieldname: 'name', operator: '=', value: '__NO_MATCH__' })
+    return filters
+  }
+
   if (f) filters.push({ fieldname: props.lastContactField || 'last_contacted_on', operator: '>=', value: f })
   if (t) {
     const end = `${t} 23:59:59`
@@ -478,36 +492,39 @@ function pushFilters() {
   const payload = buildFiltersPayload()
   emit('filters-change', payload)
 
-  // If viewControls isn't ready, avoid calling runSearchLike/reload immediately
   try {
     const vcRef = window?.__LEADS_VIEWCONTROLS__
     const vc = vcRef?.value ?? vcRef
+
     if (vc) {
-      runSearchLike()
-    } else {
-      // fallback: still run the debounced search so the server won't get weird simultaneous calls
-      runSearchLike()
+      if (typeof vc.clearFilters === 'function') vc.clearFilters()
+      if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+
+      for (const f of payload) {
+        if (typeof vc.applyFilter === 'function') {
+          vc.applyFilter({
+            filters: [['CRM Lead', f.fieldname, f.operator, f.value]],
+            replace: false,
+          })
+        }
+      }
+
+      if (typeof vc.reload === 'function') vc.reload()
     }
   } catch (e) {
-    console.warn('[QuickFiltersBar] pushFilters: fallback error', e)
-    runSearchLike()
+    console.warn('[QuickFiltersBar] pushFilters failed', e)
   }
 }
-
 /* CLEAR ALL */
 function clearAll() {
-  // Reset all UI values
   search.value = ''
   status.value = ''
   projectValue.value = ''
   owner.value = 'all'
   lastFrom.value = ''
   lastTo.value = ''
-  
-  // Clear all filters via parent handler
+  hasSearched.value = false
   emit('clear-all')
-  
-
 }
 
 /* REFRESH DATA */
@@ -543,21 +560,37 @@ async function refreshData() {
 function runSearchLike() {
   const raw0 = (search.value ?? '').toString()
   const raw  = raw0.trim()
-  if (!raw) {
-    console.debug('[QuickFiltersBar] runSearchLike: empty -> clearing like filters')
-    emit('like-change', [])
+  hasSearched.value = true
 
-    // direct fallback: clear like filters on viewcontrols if available
+  if (!raw) {
+    console.debug('[QuickFiltersBar] runSearchLike: whitespace-only -> show no results')
+
+    const impossible = '__NO_MATCH_SEARCH_SENTINEL__'
+
+    emit('like-change', [
+      { fieldname: 'first_name', value: impossible }
+    ])
+
     try {
       const vcRef = window?.__LEADS_VIEWCONTROLS__
       if (vcRef) {
         const vc = vcRef.value ?? vcRef
+
         if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
-        else if (typeof vc.clearFilters === 'function') vc.clearFilters()
+
+        const pl = { fieldname: 'first_name', operator: 'like', value: `%${impossible}%` }
+
+        if (typeof vc.applyLikeFilter === 'function') {
+          vc.applyLikeFilter(pl)
+        } else if (typeof vc.applyFilter === 'function') {
+          vc.applyFilter({ filters: [['CRM Lead', 'first_name', 'like', `%${impossible}%`]], replace: false })
+        }
+
         if (typeof vc.reload === 'function') vc.reload()
-        console.debug('[QuickFiltersBar] runSearchLike: direct clear invoked on viewControls')
       }
-    } catch (e) { console.warn('[QuickFiltersBar] direct clearLikeFilters failed', e) }
+    } catch (e) {
+      console.warn('[QuickFiltersBar] whitespace search fallback failed', e)
+    }
 
     return
   }
@@ -569,8 +602,7 @@ function runSearchLike() {
   if (isDigits(raw)) {
     const q = digitsNorm
     const payload = [
-      { fieldname: 'mobile_no',   value: q },
-      { fieldname: 'phone',       value: q },
+      { fieldname: 'mobile_no', value: q },
     ]
     console.debug('[QuickFiltersBar] runSearchLike: phone payload ->', payload)
     emit('like-change', payload)

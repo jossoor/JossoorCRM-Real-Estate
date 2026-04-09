@@ -270,7 +270,7 @@
     v-model="leads.data.page_length_count"
     v-model:list="leads"
     :rows="rows"
-    :columns="columnsForList || leads.data.columns"
+    :columns="columnsForList"
     :options="{
       showTooltip: false,
       resizeColumn: true,
@@ -374,6 +374,20 @@ const SOURCE_FIELD = computed(() => {
   if (getLeadFieldMeta('lead_source')) return 'lead_source'
   if (getLeadFieldMeta('source')) return 'source'
   return 'lead_source'
+})
+
+const listColumns = computed(() => {
+  const cols = [...(columnsForList.value || leads.value?.data?.columns || [])]
+
+  return cols.map((col) => {
+    if (col.key === 'mobile_no') {
+      return {
+        ...col,
+        width: 260,
+      }
+    }
+    return col
+  })
 })
 
 // --- safe frappe.call wrapper ------------------------------------------------
