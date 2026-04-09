@@ -37,13 +37,12 @@
       <div class="nav-section-gap">
         <template v-for="(link, idx) in mainLinks" :key="link.label + idx">
 
-          <!-- Link with sublinks (Leads, Inventory…) -->
+          <!-- Link with sublinks -->
           <div v-if="link.views" class="nav-group">
             <div
               class="nav-group-header"
               :class="{ 'nav-group-header--collapsed': isSidebarCollapsed }"
             >
-              <!-- Main clickable link -->
               <router-link :to="link.to" custom v-slot="{ navigate, isActive }">
                 <button
                   class="nav-item nav-item--main"
@@ -61,7 +60,6 @@
                 </button>
               </router-link>
 
-              <!-- Caret — ONLY visible when NOT collapsed -->
               <button
                 v-if="!isSidebarCollapsed"
                 class="nav-caret"
@@ -72,7 +70,6 @@
               </button>
             </div>
 
-            <!-- Sublinks — hidden when collapsed -->
             <transition name="submenu">
               <div
                 v-if="!isSidebarCollapsed && openDropdowns[idx]"
@@ -182,7 +179,6 @@
         :afterUpgrade="() => capture('upgrade_plan_from_trial_banner')"
       />
 
-      <!-- Collapse toggle -->
       <button
         class="nav-item nav-item--muted"
         :class="{ 'nav-item--collapsed': isSidebarCollapsed }"
@@ -213,7 +209,6 @@ import { SignupBanner, TrialBanner } from 'frappe-ui/frappe'
 import router from '@/router'
 import { capture } from '@/telemetry'
 
-// ── Icons ──────────────────────────────────────────────────────────────────
 import LucideArchive         from '~icons/lucide/archive'
 import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
 import LeadsIcon             from '@/components/Icons/LeadsIcon.vue'
@@ -223,13 +218,13 @@ import TaskIcon              from '@/components/Icons/TaskIcon.vue'
 import PinIcon               from '@/components/Icons/PinIcon.vue'
 import CollapseSidebar       from '@/components/Icons/CollapseSidebar.vue'
 import NotificationsIcon     from '@/components/Icons/NotificationsIcon.vue'
-import DealsIcon from '@/components/Icons/DealsIcon.vue'
-// ── Components ─────────────────────────────────────────────────────────────
+import DealsIcon             from '@/components/Icons/DealsIcon.vue'
+import CalendarIcon          from '@/components/Icons/CalendarIcon.vue'
+
 import UserDropdown  from '@/components/UserDropdown.vue'
 import Notifications from '@/components/Notifications.vue'
 import Settings      from '@/components/Settings/Settings.vue'
-import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
-// ── Stores ─────────────────────────────────────────────────────────────────
+
 import { viewsStore }                                    from '@/stores/views'
 import { unreadNotificationsCount, notificationsStore }  from '@/stores/notifications'
 import { usersStore }                                    from '@/stores/users'
@@ -238,19 +233,15 @@ const { getPinnedViews, getPublicViews }   = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
 const { isManager, isSalesUser, users }   = usersStore()
 
-// ── State ──────────────────────────────────────────────────────────────────
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
 const isFCSite           = ref(window.is_fc_site)
 const isDemoSite         = ref(window.is_demo_site)
 
-// Tracks open/closed per group by index
 const openDropdowns = reactive({})
-
 function toggleGroup(idx) {
   openDropdowns[idx] = !openDropdowns[idx]
 }
 
-// ── Sub-links definitions ──────────────────────────────────────────────────
 const leadsSubLinks = [
   { label: 'Create Lead',  action: 'create' },
   { label: 'New',          query: { status: 'New' } },
@@ -265,10 +256,9 @@ const leadsSubLinks = [
 
 const inventorySubLinks = [
   { label: 'Projects', to: { name: 'Inventory', query: { tab: 'projects' } } },
-  { label: 'Units',    to: { name: 'Inventory', query: { tab: 'units'     } } },
+  { label: 'Units',    to: { name: 'Inventory', query: { tab: 'units'    } } },
 ]
 
-// ── Navigate sublink ───────────────────────────────────────────────────────
 function navigateSublink(sub) {
   if (!sub) return
   if (sub.action === 'create') {
@@ -280,14 +270,12 @@ function navigateSublink(sub) {
   if (sub.path)  { router.push({ path: sub.path }).catch(() => {}); return }
 }
 
-// ── Resolve `to` to always be a route object ──────────────────────────────
 function resolveTo(to) {
   if (!to) return '/'
   if (typeof to === 'string') return { name: to }
   return to
 }
 
-// ── Main nav links ─────────────────────────────────────────────────────────
 const mainLinks = computed(() => {
   const all = [
     {
@@ -296,54 +284,17 @@ const mainLinks = computed(() => {
       to:        { name: 'Dashboard' },
       condition: () => isManager() || isSalesUser(),
     },
-    {
-      label: 'Leads',
-      icon:  LeadsIcon,
-      to:    { name: 'Leads' },
-      views: leadsSubLinks,
-    },
-    {
-  label: 'Deals',
-  icon:  DealsIcon,
-  to:    { name: 'Deals' },
-},
-    {
-      label: 'Reservations',
-      icon:  LucideArchive,
-      to:    { name: 'Reservations' },
-    },
-    {
-      label: 'Inventory',
-      icon:  LucideArchive,
-      to:    { name: 'Inventory' },
-      views: inventorySubLinks,
-    },
-    {
-      label: 'Contacts',
-      icon:  ContactsIcon,
-      to:    { name: 'Contacts' },
-    },
-    {
-      label: 'Notes',
-      icon:  NoteIcon,
-      to:    { name: 'Notes' },
-    },
-   // {
- // label: 'Calendar',
-  //icon:  CalendarIcon,
-  //to:    { name: 'Calendar' },
-//},
-    
-    {
-      label: 'Tasks',
-      icon:  TaskIcon,
-      to:    { name: 'Tasks' },
-    },
+    { label: 'Leads',        icon: LeadsIcon,             to: { name: 'Leads'        }, views: leadsSubLinks     },
+    { label: 'Deals',        icon: DealsIcon,             to: { name: 'Deals'        }                           },
+    { label: 'Reservations', icon: LucideArchive,         to: { name: 'Reservations' }                           },
+    { label: 'Inventory',    icon: LucideArchive,         to: { name: 'Inventory'    }, views: inventorySubLinks },
+    { label: 'Contacts',     icon: ContactsIcon,          to: { name: 'Contacts'     }                           },
+    { label: 'Notes',        icon: NoteIcon,              to: { name: 'Notes'        }                           },
+    { label: 'Tasks',        icon: TaskIcon,              to: { name: 'Tasks'        }                           },
   ]
   return all.filter(l => (l.condition ? l.condition() : true))
 })
 
-// ── Parsed saved/pinned views ──────────────────────────────────────────────
 function parseViews(views) {
   return views.map(v => ({
     label: v.label,
@@ -358,7 +309,6 @@ function parseViews(views) {
 const parsedPublicViews = computed(() => parseViews(getPublicViews()))
 const parsedPinnedViews = computed(() => parseViews(getPinnedViews()))
 
-// ── Init ───────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await users.promise
 })
@@ -366,26 +316,45 @@ onMounted(async () => {
 
 <style scoped>
 /* ─────────────────────────────────────────────
-   Design tokens
+   Design tokens — Orange / Blue / Gray system
+   Blue  : #022B59 · #0C407B · #1A579D · #2D71BF · #448DE1 · #5FA9FF · #83BDFF · #A7D0FF · #CBE3FF · #EFF6FF
+   Orange: #4D2B00 · #6F3E00 · #915100 · #B36300 · #D57C0C · #F7961D · #FFB150 · #FFC883 · #FFDEB6
+   Gray  : #0A0A0A · #171717 · #262626 · #404040 · #525252 · #737373 · #A3A3A3 · #D4D4D4 · #E5E5E5 · #F5F5F5 · #FAFAFA
 ───────────────────────────────────────────── */
 .sidebar-root {
-  --sb-bg:            #FAFAFA;
-  --sb-border:        #E8E8E8;
-  --sb-active-bg:     #111111;
-  --sb-active-fg:     #FFFFFF;
-  --sb-hover-bg:      #EFEFEF;
-  --sb-fg:            #3A3A3A;
-  --sb-muted-fg:      #999999;
-  --sb-icon-clr:      #6B6B6B;
-  --sb-badge-bg:      #111111;
-  --sb-badge-fg:      #FFFFFF;
-  --sb-divider:       #E8E8E8;
-  --sb-section-fg:    #AAAAAA;
-  --sb-sublink-fg:    #707070;
-  --sb-radius:        8px;
-  --sb-item-h:        34px;
-  --sb-icon-sz:       15px;
-  --t:                0.16s ease;
+  /* Structure */
+  --sb-bg:          #FFFFFF;
+  --sb-border:      #E5E5E5;
+  --sb-radius:      8px;
+  --sb-item-h:      34px;
+  --sb-icon-sz:     15px;
+  --t:              0.15s ease;
+
+  /* Text */
+  --sb-fg:          #404040;
+  --sb-muted-fg:    #A3A3A3;
+  --sb-section-fg:  #A3A3A3;
+  --sb-sublink-fg:  #737373;
+
+  /* Icon */
+  --sb-icon-clr:    #737373;
+
+  /* Hover */
+  --sb-hover-bg:    #EFF6FF;   /* Blue-50  — cool, on-brand hover */
+  --sb-hover-fg:    #1A579D;   /* Blue-700 */
+  --sb-hover-icon:  #2D71BF;   /* Blue-600 */
+
+  /* Active — filled deep blue */
+  --sb-active-bg:   #1A579D;   /* Blue-700 */
+  --sb-active-fg:   #FFFFFF;
+  --sb-active-icon: #FFFFFF;
+
+  /* Badge — orange accent */
+  --sb-badge-bg:    #D57C0C;   /* Orange-500 */
+  --sb-badge-fg:    #FFFFFF;
+
+  /* Divider */
+  --sb-divider:     #E5E5E5;
 
   background: var(--sb-bg);
   border-right: 1px solid var(--sb-border);
@@ -393,19 +362,15 @@ onMounted(async () => {
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Width states (controlled by Tailwind in parent if desired, or CSS here) */
+/* ─── Width states ─── */
 .sidebar-expanded  { width: 220px; min-width: 220px; }
 .sidebar-collapsed { width: 48px;  min-width: 48px;  }
 
-/* ─────────────────────────────────────────────
-   Scrollbar
-───────────────────────────────────────────── */
+/* ─── Scrollbar ─── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ─────────────────────────────────────────────
-   Regions
-───────────────────────────────────────────── */
+/* ─── Regions ─── */
 .sidebar-top {
   flex-shrink: 0;
   border-bottom: 1px solid var(--sb-border);
@@ -429,9 +394,7 @@ onMounted(async () => {
   gap: 2px;
 }
 
-/* ─────────────────────────────────────────────
-   Helpers
-───────────────────────────────────────────── */
+/* ─── Helpers ─── */
 .nav-divider {
   height: 1px;
   background: var(--sb-divider);
@@ -454,9 +417,7 @@ onMounted(async () => {
   gap: 1px;
 }
 
-/* ─────────────────────────────────────────────
-   Nav item
-───────────────────────────────────────────── */
+/* ─── Nav item ─── */
 .nav-item {
   display: flex;
   align-items: center;
@@ -475,35 +436,41 @@ onMounted(async () => {
   position: relative;
   white-space: nowrap;
   overflow: hidden;
-  /* reset button styles */
   background: transparent;
   border: none;
   outline: none;
 }
 
+/* Hover — blue tint */
 .nav-item:hover {
   background: var(--sb-hover-bg);
-  color: #111;
+  color: var(--sb-hover-fg);
+}
+.nav-item:hover .nav-icon {
+  color: var(--sb-hover-icon);
 }
 
-.nav-item:hover .nav-icon { color: #111; }
-
-/* Active */
+/* Active — solid Blue-700 */
 .nav-item--active {
   background: var(--sb-active-bg) !important;
   color: var(--sb-active-fg) !important;
   font-weight: 500;
 }
-.nav-item--active .nav-icon { color: #FFF !important; }
+.nav-item--active .nav-icon {
+  color: var(--sb-active-icon) !important;
+}
 
 /* Muted (collapse button) */
 .nav-item--muted {
   color: var(--sb-muted-fg);
   font-size: 12.5px;
 }
-.nav-item--muted:hover { color: #333; }
+.nav-item--muted:hover {
+  color: #2D71BF;
+  background: #EFF6FF;
+}
 
-/* Collapsed state — center the icon */
+/* Collapsed — center icon */
 .nav-item--collapsed {
   justify-content: center;
   padding: 0;
@@ -511,12 +478,10 @@ onMounted(async () => {
   margin-inline: auto;
 }
 
-/* Main link inside group takes remaining space */
+/* Main link inside group */
 .nav-item--main { flex: 1; min-width: 0; }
 
-/* ─────────────────────────────────────────────
-   Icon
-───────────────────────────────────────────── */
+/* ─── Icon ─── */
 .nav-icon {
   display: grid;
   place-items: center;
@@ -532,9 +497,7 @@ onMounted(async () => {
   height: var(--sb-icon-sz);
 }
 
-/* ─────────────────────────────────────────────
-   Label
-───────────────────────────────────────────── */
+/* ─── Label ─── */
 .nav-label {
   flex: 1;
   min-width: 0;
@@ -542,9 +505,7 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-/* ─────────────────────────────────────────────
-   Badge
-───────────────────────────────────────────── */
+/* ─── Badge — orange accent ─── */
 .nav-badge {
   display: inline-flex;
   align-items: center;
@@ -553,7 +514,7 @@ onMounted(async () => {
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: var(--sb-badge-bg);
+  background: var(--sb-badge-bg);   /* Orange-500 */
   color: var(--sb-badge-fg);
   font-size: 10px;
   font-weight: 600;
@@ -561,6 +522,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
+/* Collapsed dot — orange */
 .nav-badge-dot {
   position: absolute;
   top: 6px;
@@ -568,14 +530,12 @@ onMounted(async () => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #EF4444;
-  border: 1.5px solid var(--sb-bg);
+  background: #D57C0C;           /* Orange-500 */
+  border: 1.5px solid #FFFFFF;
   pointer-events: none;
 }
 
-/* ─────────────────────────────────────────────
-   Nav group (item + caret + sublinks)
-───────────────────────────────────────────── */
+/* ─── Nav group ─── */
 .nav-group {
   display: flex;
   flex-direction: column;
@@ -587,14 +547,11 @@ onMounted(async () => {
   gap: 2px;
 }
 
-/* When collapsed, the caret button is gone (v-if) so this just centers the icon button */
 .nav-group-header--collapsed {
   justify-content: center;
 }
 
-/* ─────────────────────────────────────────────
-   Caret
-───────────────────────────────────────────── */
+/* ─── Caret ─── */
 .nav-caret {
   display: grid;
   place-items: center;
@@ -602,7 +559,7 @@ onMounted(async () => {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  color: #C0C0C0;
+  color: #D4D4D4;                /* Gray-300 — subtle default */
   cursor: pointer;
   transition: background var(--t), color var(--t), transform 0.2s ease;
   background: transparent;
@@ -611,24 +568,22 @@ onMounted(async () => {
 }
 
 .nav-caret:hover {
-  background: var(--sb-hover-bg);
-  color: #444;
+  background: #EFF6FF;           /* Blue-50 */
+  color: #2D71BF;                /* Blue-600 */
 }
 
 .nav-caret--open {
-  color: #555;
+  color: #448DE1;                /* Blue-500 */
   transform: rotate(90deg);
 }
 
-/* ─────────────────────────────────────────────
-   Sublinks
-───────────────────────────────────────────── */
+/* ─── Sublinks ─── */
 .sublinks {
   display: flex;
   flex-direction: column;
   margin: 2px 0 3px 17px;
   padding-left: 9px;
-  border-left: 1.5px solid var(--sb-divider);
+  border-left: 1.5px solid #CBE3FF;   /* Blue-200 — on-brand left rail */
   overflow: hidden;
 }
 
@@ -653,20 +608,20 @@ onMounted(async () => {
 }
 
 .sublink:hover {
-  background: var(--sb-hover-bg);
-  color: #111;
+  background: #EFF6FF;           /* Blue-50 */
+  color: #1A579D;                /* Blue-700 */
 }
 
 .sublink:hover .sublink-pip {
-  background: #333;
-  transform: scale(1.5);
+  background: #448DE1;           /* Blue-500 */
+  transform: scale(1.6);
 }
 
 .sublink-pip {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #D0D0D0;
+  background: #CBE3FF;           /* Blue-200 — matches rail */
   flex-shrink: 0;
   transition: background var(--t), transform 0.15s ease;
 }
@@ -677,17 +632,13 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-/* ─────────────────────────────────────────────
-   Submenu transition (height + fade)
-───────────────────────────────────────────── */
+/* ─── Submenu transition ─── */
 .submenu-enter-active {
-  transition: max-height 0.24s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
+  transition: max-height 0.24s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
   max-height: 500px;
 }
 .submenu-leave-active {
-  transition: max-height 0.18s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.14s ease;
+  transition: max-height 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.14s ease;
 }
 .submenu-enter-from,
 .submenu-leave-to {
