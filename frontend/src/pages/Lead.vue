@@ -232,7 +232,7 @@
 
                 <Tooltip :text="__('Send an email')">
                   <div>
-                    <Button @click="lead.data.email ? openEmailBox() : toast.error(__('No email set'))">
+                    <Button @click="handleOpenEmail">
                       <template #icon><Email2Icon /></template>
                     </Button>
                   </div>
@@ -240,7 +240,7 @@
 
                 <Tooltip :text="__('Go to website')">
                   <div>
-                    <Button @click="lead.data.website ? openWebsite(lead.data.website) : toast.error(__('No website set'))">
+                    <Button @click="handleOpenWebsite">
                       <template #icon><LinkIcon /></template>
                     </Button>
                   </div>
@@ -344,10 +344,12 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
 
+const emailToastLock = ref(false)
 const PAYMENT_PLAN_DOCTYPE = 'Payment Plan'
 const DEFAULT_PLAN_STATUS = 'Draft'
 const DEFAULT_PLAN_YEARS = 1
 const SYS_CURRENCY = window?.frappe?.boot?.sysdefaults?.currency || ''
+const websiteToastLock = ref(false)
 
 const { brand } = getSettings()
 const { $dialog, $socket, makeCall } = globalStore()
@@ -394,6 +396,38 @@ async function reserveFromLead() {
   } catch (e) {
     toast.error(e?.messages?.[0] || e?.message || __('Could not set status to Reserved'))
   }
+}
+
+function handleOpenWebsite() {
+  if (lead.data.website) {
+    openWebsite(lead.data.website)
+    return
+  }
+
+  if (websiteToastLock.value) return
+
+  websiteToastLock.value = true
+  toast.error(__('No website set'))
+
+  setTimeout(() => {
+    websiteToastLock.value = false
+  }, 2000)
+}
+
+function handleOpenEmail() {
+  if (lead.data.email) {
+    openEmailBox()
+    return
+  }
+
+  if (emailToastLock.value) return
+
+  emailToastLock.value = true
+  toast.error(__('No email set'))
+
+  setTimeout(() => {
+    emailToastLock.value = false
+  }, 2000)
 }
 
 const lead = createResource({
