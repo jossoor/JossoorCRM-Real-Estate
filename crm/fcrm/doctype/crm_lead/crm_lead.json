@@ -632,8 +632,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Original Lead",
-   "read_only": 1,
-   "set_only_once": 1
+   "read_only": 1
   },
   {
    "default": "0",
@@ -654,10 +653,13 @@
    "set_only_once": 1
   },
   {
+   "columns": 1,
    "fieldname": "duplicate_leads",
    "fieldtype": "Table",
    "label": "Duplicate Leads",
-   "options": "Duplicate Lead Entry"
+   "options": "Duplicate Lead Entry",
+   "placeholder": "Duplicate Leads",
+   "read_only": 1
   },
   {
    "fieldname": "organization_tab",
@@ -737,7 +739,7 @@
  "image_field": "image",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-05 18:17:12.266951",
+ "modified": "2026-04-14 15:58:11.774853",
  "modified_by": "Administrator",
  "module": "FCRM",
  "name": "CRM Lead",
