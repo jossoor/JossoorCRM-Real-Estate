@@ -415,7 +415,9 @@ function handleOpenWebsite() {
 }
 
 function handleOpenEmail() {
-  if (lead.data.email) {
+  const email = String(lead.data?.email || '').trim()
+
+  if (email) {
     openEmailBox()
     return
   }
@@ -751,9 +753,34 @@ function validateRequired(fieldname, value) {
 async function deleteLead(name) { await call('frappe.client.delete', { doctype: 'CRM Lead', name }); router.push({ name: 'Leads' }) }
 async function deleteLeadWithModal(name) { showDeleteLinkedDocModal.value = true }
 function openEmailBox() {
-  let currentTab = tabs.value[tabIndex.value]
-  if (!['Emails', 'Comments', 'Activity'].includes(currentTab.name)) activities.value.changeTabTo('emails')
-  nextTick(() => (activities.value.emailBox.show = true))
+  const currentTab = tabs.value?.[tabIndex.value]
+
+  if (!activities.value) {
+    if (!emailToastLock.value) {
+      emailToastLock.value = true
+      toast.error(__('Email panel is not ready'))
+      setTimeout(() => {
+        emailToastLock.value = false
+      }, 2000)
+    }
+    return
+  }
+
+  if (!['Emails', 'Comments', 'Activity'].includes(currentTab?.name)) {
+    activities.value.changeTabTo('emails')
+  }
+
+  nextTick(() => {
+    if (activities.value?.emailBox) {
+      activities.value.emailBox.show = true
+    } else if (!emailToastLock.value) {
+      emailToastLock.value = true
+      toast.error(__('No email set'))
+      setTimeout(() => {
+        emailToastLock.value = false
+      }, 2000)
+    }
+  })
 }
 async function saveChanges(data) {
   try {

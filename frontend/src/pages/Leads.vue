@@ -270,7 +270,7 @@
     v-model="leads.data.page_length_count"
     v-model:list="leads"
     :rows="rows"
-    :columns="columnsForList"
+    :columns="listColumns"
     :options="{
       showTooltip: false,
       resizeColumn: true,
@@ -868,36 +868,17 @@ function handleClearAll() {
 
 /* ----------- FIXED: never dedupe away >= / <= ----------- */
 function applyFilters(filters = [], replace = false) {
-  // If filters come from QuickFiltersBar (via emit), we should rebuild from UI state
-  // to ensure we capture removals/clears.
-  // The 'filters' arg might be valid from other callers, but if it came from the
-  // QuickFiltersBar 'filters-change' event, we prefer the 'ui' source of truth.
-  // We can detect this by checking if we have a rebuildAllFilters available,
-  // OR just always rebuild if we are in a context where 'ui' is authoritative.
-  
-  // Since we just added rebuildAllFilters, let's use it if available and if we want a full refresh.
-  // However, applyFilters is also used by initial load.
-  
   let validTuples = []
-  
-  // Strategy: If 'filters' is passed, it might be a partial update. 
-  // BUT for QuickFiltersBar, we want a full replace based on 'ui'.
-  // We can just rely on 'ui' always being up to date because QuickFiltersBar v-models it!
-  
-  const fullFilters = rebuildAllFilters()
-  
+
+  const fullFilters = Array.isArray(filters) ? filters : rebuildAllFilters()
+
   if (fullFilters.length) {
-     for (const f of fullFilters) {
-        if (!f?.fieldname || f.value === '' || f.value === null || f.value === undefined) continue
-        let value = f.value
-        if (f.fieldname === 'delayed') value = value ? 1 : 0
-        validTuples.push(['CRM Lead', f.fieldname, String(f.operator || '=').toLowerCase(), value])
-     }
-  } else {
-     // If no filters from UI, we might still have incoming 'filters' argument from somewhere else?
-     // Actually, let's just use the incoming 'filters' if 'ui' produced nothing (edge case),
-     // OR strictly follow 'ui' if we want it to be the master.
-     // Given the user issue "status not applied" (failed clear), strict 'ui' adherence is safer.
+    for (const f of fullFilters) {
+      if (!f?.fieldname || f.value === '' || f.value === null || f.value === undefined) continue
+      let value = f.value
+      if (f.fieldname === 'delayed') value = value ? 1 : 0
+      validTuples.push(['CRM Lead', f.fieldname, String(f.operator || '=').toLowerCase(), value])
+    }
   }
 
   const vc = viewControls.value
@@ -1149,14 +1130,31 @@ const rebuildAllFilters = () => {
     }
   }
 
-  // Dates → >= / <= only
-  if (ui.last_contacted_from) {
-    F.push({ fieldname: LAST_CONTACT_FIELD.value.fieldname, operator: '>=', value: ui.last_contacted_from })
+  // Dates → valid range only, invalid range => no results
+  const from = String(ui.last_contacted_from || '').trim()
+  const to = String(ui.last_contacted_to || '').trim()
+
+  if (from && to && from > to) {
+    F.push({ fieldname: 'name', operator: '=', value: '__NO_MATCH__' })
+    return F
   }
-  if (ui.last_contacted_to) {
+
+  if (from) {
+    F.push({
+      fieldname: LAST_CONTACT_FIELD.value.fieldname,
+      operator: '>=',
+      value: from,
+    })
+  }
+
+  if (to) {
     const isDT = (LAST_CONTACT_FIELD.value.fieldtype || '').toLowerCase() === 'datetime'
-    const end = isDT ? `${ui.last_contacted_to} 23:59:59` : ui.last_contacted_to
-    F.push({ fieldname: LAST_CONTACT_FIELD.value.fieldname, operator: '<=', value: end })
+    const end = isDT ? `${to} 23:59:59` : to
+    F.push({
+      fieldname: LAST_CONTACT_FIELD.value.fieldname,
+      operator: '<=',
+      value: end,
+    })
   }
 
   // Budget

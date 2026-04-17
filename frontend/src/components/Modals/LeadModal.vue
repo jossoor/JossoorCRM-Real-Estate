@@ -27,7 +27,7 @@
             <FieldWrap :label="__('Title')">
               <SelectField v-model="lead.doc.salutation"
                 :options="salutations.data?.map(s => s.name) ?? []"
-                :placeholder="__('Select...')" />
+                placeholder="" />
             </FieldWrap>
 
             <!-- first_name → Data, reqd -->
@@ -73,21 +73,21 @@
             <FieldWrap :label="__('Source')">
               <SelectField v-model="lead.doc.source"
                 :options="leadSources.data?.map(s => s.name) ?? []"
-                :placeholder="__('Select...')" />
+                placeholder="" />
             </FieldWrap>
 
             <!-- territory → Link: CRM Territory (backend) -->
             <FieldWrap :label="__('Territory')">
               <SelectField v-model="lead.doc.territory"
                 :options="territories.data?.map(t => t.name) ?? []"
-                :placeholder="__('Select...')" />
+                placeholder="" />
             </FieldWrap>
 
             <!-- industry → Link: CRM Industry (backend) -->
             <FieldWrap :label="__('Industry')">
               <SelectField v-model="lead.doc.industry"
                 :options="industries.data?.map(i => i.name) ?? []"
-                :placeholder="__('Select...')" />
+                placeholder="" />
             </FieldWrap>
 
             <!-- lead_type → Select (OPT.lead_type from embedded JSON) -->
@@ -101,7 +101,9 @@
             <!-- lead_owner → Link: User (auto-set, read-only) -->
             <FieldWrap :label="__('Lead Owner')">
               <input v-model="lead.doc.lead_owner" type="text"
-                class="fi bg-gray-50 text-gray-400 cursor-not-allowed" disabled />
+                class="fi bg-gray-50 text-gray-400 cursor-not-allowed"
+                :class="{ 'border-red-400 bg-red-50': fieldError === 'lead_owner' }"
+                disabled />
             </FieldWrap>
 
           </div>
@@ -118,7 +120,7 @@
                 <SelectField
                   v-model="lead.doc.project"
                   :options="projects.data?.map(p => ({ value: p.name, label: p.project_name || p.name })) ?? []"
-                  :placeholder="__('Select...')"
+                  placeholder=""
                   @update:modelValue="onLeadProjectChange"
                 />
               </FieldWrap>
@@ -128,7 +130,7 @@
                 <SelectField
                   v-model="lead.doc.project_unit"
                   :options="filteredProjectUnits.map(u => ({ value: u.name, label: u.unit_name || u.name }))"
-                  :placeholder="__('Select...')"
+                  :placeholder="!lead.doc.project ? __('Select project first') : __('No results found')"
                   :disabled="!lead.doc.project"
                 />
               </FieldWrap>
@@ -138,7 +140,7 @@
                 <SelectField
                   v-model="lead.doc.single_unit"
                   :options="units.data?.map(u => ({ value: u.name, label: u.unit_name || u.name })) ?? []"
-                  :placeholder="__('Select...')"
+                  placeholder=""
                 />
               </FieldWrap>
 
@@ -159,14 +161,26 @@
 
               <!-- property_city → Select — OPT.property_city -->
               <FieldWrap :label="__('City')">
-                <SelectField v-model="lead.doc.property_city"
-                  :options="OPT.property_city" :placeholder="__('Select...')" />
+                <input
+                  v-model.trim="lead.doc.property_city"
+                  type="text"
+                  class="fi"
+                  maxlength="140"
+                  :class="{ 'border-red-400 bg-red-50': fieldError === 'property_city' }"
+                  :placeholder="__('Enter city')"
+                />
               </FieldWrap>
 
               <!-- property_region → Select — OPT.property_region -->
               <FieldWrap :label="__('Region / District')">
-                <SelectField v-model="lead.doc.property_region"
-                  :options="OPT.property_region" :placeholder="__('Select...')" />
+                <input
+                  v-model.trim="lead.doc.property_region"
+                  type="text"
+                  class="fi"
+                  maxlength="140"
+                  :class="{ 'border-red-400 bg-red-50': fieldError === 'property_region' }"
+                  :placeholder="__('Enter region / district')"
+                />
               </FieldWrap>
 
               <!-- property_type → Select — OPT.property_type, rendered as chips -->
@@ -183,21 +197,23 @@
                 <SelectField
                   v-model="lead.doc.property_subtype"
                   :options="currentSubtypes"
-                  :placeholder="lead.doc.property_type ? __('Select...') : __('Select a type first')"
+                  :placeholder="lead.doc.property_type ? '' : __('Select a type first')"
                   :disabled="!lead.doc.property_type"
                 />
               </FieldWrap>
 
               <!-- property_space → Int — slider, writes raw sqm value -->
               <FieldWrap :label="__('Space (sqm)')">
-                <Slider v-model="lead.doc.property_space"
-                  :max="SPACE_MAX" :format="v => v + ' m²'" />
+                <div :class="fieldError === 'property_space' ? 'border border-red-400 bg-red-50 rounded-lg p-2' : ''">
+                  <Slider v-model="lead.doc.property_space"
+                    :max="SPACE_MAX" :format="v => v + ' m²'" />
+                </div>
               </FieldWrap>
 
               <!-- property_floor → Select — OPT.property_floor -->
               <FieldWrap :label="__('Floor Preference')">
                 <SelectField v-model="lead.doc.property_floor"
-                  :options="OPT.property_floor" :placeholder="__('Select...')" />
+                  :options="OPT.property_floor" placeholder="" />
               </FieldWrap>
 
             </PropCard>
@@ -216,50 +232,75 @@
               <!-- property_decoration → Select — OPT.property_decoration -->
               <FieldWrap :label="__('Decoration Status')">
                 <SelectField v-model="lead.doc.property_decoration"
-                  :options="OPT.property_decoration" :placeholder="__('Select...')" />
+                  :options="OPT.property_decoration" placeholder="" />
               </FieldWrap>
 
               <!-- property_finishing → Select — OPT.property_finishing -->
               <FieldWrap :label="__('Finishing Level')">
-                <SelectField v-model="lead.doc.property_finishing"
-                  :options="OPT.property_finishing" :placeholder="__('Select...')" />
+                <SelectField
+                  v-model="lead.doc.property_finishing"
+                  :options="currentFinishingOptions"
+                  :placeholder="__('Select finishing level')"
+                />
               </FieldWrap>
 
               <!-- property_relation → Select — OPT.property_relation, chips -->
               <FieldWrap :label="__('Property Relation')">
                 <div class="flex gap-2 flex-wrap mb-2">
-                  <TypeChip v-for="r in OPT.property_relation" :key="r"
-                    v-model="lead.doc.property_relation" :value="r" :label="__(r)"
-                    @update:modelValue="v => { if (v !== 'Project') lead.doc.property_project = '' }" />
+                  <TypeChip
+                    v-for="r in OPT.property_relation"
+                    :key="r"
+                    v-model="lead.doc.property_relation"
+                    :value="r"
+                    :label="__(r)"
+                    @update:modelValue="v => { if (v !== 'Project') lead.doc.property_project = '' }"
+                  />
                 </div>
-                <input v-if="lead.doc.property_relation === 'Project'"
+
+                <SelectField
+                  v-if="lead.doc.property_relation === 'Project'"
                   v-model="lead.doc.property_project"
-                  type="text" class="fi" maxlength="140"
+                  :options="projects.data?.map(p => ({ value: p.name, label: p.project_name || p.name })) ?? []"
+                  :placeholder="projects.data?.length ? __('Select project') : __('No results found')"
                   :class="{ 'border-red-400 bg-red-50': fieldError === 'property_project' }"
-                  :placeholder="__('Enter project name...')" />
+                />
               </FieldWrap>
 
               <!-- property_year_built → Int -->
               <FieldWrap :label="__('Year Built')">
-                <input v-model.number="lead.doc.property_year_built" type="number"
-                  min="1900" :max="currentYear" class="fi" placeholder="e.g. 2022" />
+                <input
+                  v-model="lead.doc.property_year_built"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="4"
+                  class="fi"
+                  :class="{ 'border-red-400 bg-red-50': fieldError === 'property_year_built' }"
+                  placeholder="e.g. 2022"
+                />
               </FieldWrap>
 
               <!-- property_delivery_date → Date -->
               <FieldWrap :label="__('Expected Delivery Date')">
-                <input v-model="lead.doc.property_delivery_date" type="date" class="fi" />
+                <input
+                  v-model="lead.doc.property_delivery_date"
+                  type="date"
+                  class="fi"
+                  :min="todayDate"
+                  :class="{ 'border-red-400 bg-red-50': fieldError === 'property_delivery_date' }"
+                />
               </FieldWrap>
 
               <!-- property_view → Select — OPT.property_view -->
               <FieldWrap :label="__('View Preference')">
                 <SelectField v-model="lead.doc.property_view"
-                  :options="OPT.property_view" :placeholder="__('Select...')" />
+                  :options="OPT.property_view" placeholder="" />
               </FieldWrap>
 
               <!-- property_features → Select — OPT.property_features -->
               <FieldWrap :label="__('Key Feature')">
                 <SelectField v-model="lead.doc.property_features"
-                  :options="OPT.property_features" :placeholder="__('Select...')" />
+                  :options="OPT.property_features" placeholder="" />
               </FieldWrap>
 
             </PropCard>
@@ -288,14 +329,18 @@
 
                 <!-- property_min_price → Currency — slider -->
                 <FieldWrap :label="__('Min Budget')">
-                  <Slider v-model="lead.doc.property_min_price"
-                    :max="PRICE_MAX" :format="formatPrice" />
+                  <div :class="fieldError === 'property_min_price' ? 'border border-red-400 bg-red-50 rounded-lg p-2' : ''">
+                    <Slider v-model="lead.doc.property_min_price"
+                      :max="PRICE_MAX" :format="formatPrice" />
+                  </div>
                 </FieldWrap>
 
                 <!-- property_max_price → Currency — slider -->
                 <FieldWrap :label="__('Max Budget')">
-                  <Slider v-model="lead.doc.property_max_price"
-                    :max="PRICE_MAX" :format="formatPrice" />
+                  <div :class="fieldError === 'property_max_price' ? 'border border-red-400 bg-red-50 rounded-lg p-2' : ''">
+                    <Slider v-model="lead.doc.property_max_price"
+                      :max="PRICE_MAX" :format="formatPrice" />
+                  </div>
                 </FieldWrap>
 
                 <!-- property_payment → Select — OPT.property_payment, chips -->
@@ -311,7 +356,9 @@
                   v-if="lead.doc.property_payment && lead.doc.property_payment !== OPT.property_payment[0]"
                   :label="__('Down Payment (%)')">
                   <input v-model.number="lead.doc.property_down_payment"
-                    type="number" min="0" max="100" step="5" class="fi" placeholder="e.g. 20" />
+                    type="number" min="0" max="100" step="5" class="fi"
+                    :class="{ 'border-red-400 bg-red-50': fieldError === 'property_down_payment' }"
+                    placeholder="e.g. 20" />
                 </FieldWrap>
 
                 <!-- property_ownership → Select — OPT.property_ownership, chips -->
@@ -378,7 +425,7 @@ import { useOnboarding } from 'frappe-ui/frappe'
 import { useDocument }   from '@/data/document'
 import {
   computed, defineComponent, h,
-  onMounted, ref, nextTick,
+  onMounted, ref, nextTick, watch,
 } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -395,7 +442,8 @@ const router         = useRouter()
 const error          = ref(null)
 const fieldError     = ref(null)
 const isLeadCreating = ref(false)
-const currentYear    = new Date().getFullYear()
+const currentYear = new Date().getFullYear()
+const todayDate = new Date().toISOString().split('T')[0]
 
 const SPACE_MAX = 500        // property_space Int max (sqm)
 const PRICE_MAX = 5_000_000  // property_min/max_price max (EGP)
@@ -417,7 +465,7 @@ const DOCTYPE_JSON = {
     {"fieldname": "no_of_employees", "fieldtype": "Select", "options": "1-10\n11-50\n51-200\n201-500\n501-1000\n1000+"},
     {"fieldname": "lead_type", "fieldtype": "Select", "options": "\nOut Source\nCompany"},
     {"fieldname": "property_city", "fieldtype": "Select", "options": "\nCairo\nNew Cairo\nNasr City\nHeliopolis\nMaadi\n6th of October\nSheikh Zayed\nZamalek\nNew Administrative Capital\nAlexandria\nGiza"},
-    {"fieldname": "property_region", "fieldtype": "Select", "options": "\nMaadi\nDegla\nSarayat\nZohour\nNew Maadi\nHeliopolis\nNasr City\nMadinet Nasr\nZamalek\nGarden City\nDowntown Cairo\nMohandessin\nAgouza\nDokki\nShoubra\nShubra El Kheima\nNew Cairo - 1st Settlement\nNew Cairo - 5th Settlement\nNew Cairo - 3rd Settlement\nBeit El Watan\nAl Rehab City\nMadinaty\nMostakbal City\nAl Shorouk City\nAl Obour City\nNew Administrative Capital - R1\nNew Administrative Capital - R2\nNew Administrative Capital - R3\n6th of October - Hay 1\n6th of October - Hay 2\n6th of October - Hay 3\nSheikh Zayed - Hay 1\nSheikh Zayed - Hay 2\nNorth Coast\nAin Sokhna\nEl Gouna\nHurghada\nSharm El Sheikh"},
+    {"fieldname": "property_region", "fieldtype": "Select", "options": "\nMaadi\nDegla\nSarayat\nZohour\nNew Maadi\nHeliopolis\nNasr City\nMadinet Nasr\nZamalek\nGarden City\nDowntown Cairo\nMohandessin\nAgouza\nDokki\nShoubra\nShubra El Kheima\nNew Cairo - 1st Settlement\nNew Cairo - 5th Settlement\nNew Cairo - 3rd Settlement\nBeit El Watan\nAl Rehab City\nMadinaty\nMostakbal City\nAl Shorouk City\nAl Obour City\nNew Administrative Capital - R1\nNew Administrative Capital - R2\nNew Administrative Capital - R3\n6th of October - Hay 1\n6th of October - Hay 2\n6th of October - Hay 3\nSheikh Zayed - Hay 1\nSheikh Zayed - Hay 2\nSmouha\nGleem\nSidi Gaber\nMontaza\nAgami\nStanley\nMiami\nMandara\nLouran\nRoushdy\nKafr Abdo\nSporting\nBolkly\nAsafra\nBacchus\nNorth Coast\nAin Sokhna\nEl Gouna\nHurghada\nSharm El Sheikh"},
     {"fieldname": "property_type", "fieldtype": "Select", "options": "\nResidential\nCommercial\nAdministrative\nLand"},
     {"fieldname": "property_subtype", "fieldtype": "Select", "options": "\nApartment\nDuplex\nPenthouse\nStudio\nVilla\nTwin House\nTownhouse\nChalet\nCabin\nOffice\nShop\nClinic\nWarehouse\nShowroom\nAdministrative Office\nPlot - Residential\nPlot - Commercial\nPlot - Industrial"},
     {"fieldname": "property_floor", "fieldtype": "Select", "options": "\nGround Floor\n1st Floor\n2nd Floor\n3rd Floor\n4th Floor\n5th Floor\n6th Floor\n7th Floor\n8th Floor\n9th Floor\n10th Floor\nHigh Floor (10+)\nRooftop / Penthouse\nBasement\nNo Preference"},
@@ -460,6 +508,25 @@ const SUBTYPES_BY_TYPE = {
 // Filtered subtypes based on selected property_type
 const currentSubtypes = computed(() =>
   lead.doc?.property_type ? (SUBTYPES_BY_TYPE[lead.doc.property_type] ?? []) : []
+)
+
+const currentFinishingOptions = computed(() => {
+  const all = OPT.property_finishing || []
+
+  if (lead.doc?.property_decoration === 'Core & Shell') {
+    return all.filter(opt => opt !== 'Fully Finished')
+  }
+
+  return all
+})
+
+watch(
+  () => lead.doc?.property_decoration,
+  (val) => {
+    if (val === 'Core & Shell' && lead.doc?.property_finishing === 'Fully Finished') {
+      lead.doc.property_finishing = ''
+    }
+  }
 )
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -546,27 +613,46 @@ const SelectField = defineComponent({
   props: {
     modelValue:  String,
     options:     { type: Array, default: () => [] },
-    placeholder: { type: String, default: 'Select...' },
+    placeholder: { type: String, default: '' },
     disabled:    { type: Boolean, default: false },
   },
   emits: ['update:modelValue'],
   setup(p, { emit }) {
-    return () => h('select', {
-      value: p.modelValue ?? '',
-      disabled: p.disabled,
-      onChange: e => emit('update:modelValue', e.target.value),
-      class: [
-        'select-fi fi',
-        p.disabled ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : '',
-      ].join(' '),
-    }, [
-      h('option', { value: '' }, p.placeholder),
-      ...(p.options ?? []).map(o =>
+    const normalizedOptions = computed(() =>
+      (p.options ?? []).map(o =>
         typeof o === 'string'
-          ? h('option', { value: o }, o)
-          : h('option', { value: o.value }, o.label)
-      ),
-    ])
+          ? { value: o, label: o }
+          : { value: o.value, label: o.label ?? o.value }
+      )
+    )
+
+    return () => {
+      const hasOptions = normalizedOptions.value.length > 0
+      const showPlaceholder = !!p.placeholder || !hasOptions
+
+      return h('select', {
+        value: p.modelValue || '',
+        disabled: p.disabled,
+        onChange: e => emit('update:modelValue', e.target.value),
+        class: [
+          'select-fi fi',
+          p.disabled ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : '',
+          !p.modelValue ? 'text-gray-400' : 'text-gray-700',
+        ].join(' '),
+      }, [
+        ...(showPlaceholder
+          ? [h('option', {
+              value: '',
+              disabled: hasOptions ? false : true,
+              selected: !p.modelValue,
+              hidden: false,
+            }, p.placeholder || __('No results found'))]
+          : []),
+        ...normalizedOptions.value.map(o =>
+          h('option', { value: o.value }, o.label)
+        ),
+      ])
+    }
   },
 })
 
@@ -695,117 +781,277 @@ const units = createResource({
 // ─── Create Lead ──────────────────────────────────────────────────────────────
 const exceedsMax = (value, max) => (value || '').length > max
 const createLead = createResource({ url: 'frappe.client.insert' })
+const createLeadNote = createResource({ url: 'frappe.client.insert' })
 function stripHtml(html) {
-  return (html || '')
+  return String(html || '')
     .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(strong|b|em|i|span|div|p)[^>]*>/gi, '')
     .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
     .trim()
 }
+function isBlank(value) {
+  return String(value ?? '').trim() === ''
+}
 
+function validateMax(field, label, max) {
+  if (String(lead.doc[field] ?? '').length > max) {
+    fieldError.value = field
+    error.value = __(`${label} cannot exceed ${max} characters`)
+    return error.value
+  }
+  return null
+}
+
+function validateNumberRange(field, label, min, max) {
+  const value = lead.doc[field]
+  if (value == null || value === '') return null
+
+  const num = Number(value)
+  if (Number.isNaN(num)) {
+    fieldError.value = field
+    error.value = __(`${label} must be a valid number`)
+    return error.value
+  }
+
+  if (num < min || num > max) {
+    fieldError.value = field
+    error.value = __(`${label} must be between ${min} and ${max}`)
+    return error.value
+  }
+
+  return null
+}
 
 async function createNewLead() {
   await triggerOnBeforeCreate?.()
 
   createLead.submit(
-    { doc: { doctype: 'CRM Lead', ...lead.doc } },
+    {
+      doc: {
+        doctype: 'CRM Lead',
+        ...lead.doc,
+        notes: undefined,
+      },
+    },
     {
       validate() {
-        error.value      = null
+        error.value = null
         fieldError.value = null
 
-        if (!lead.doc.first_name) {
+        // Required fields
+        if (isBlank(lead.doc.first_name)) {
           fieldError.value = 'first_name'
           error.value = __('First Name is mandatory')
           return error.value
         }
 
-        const mobileDigits = (lead.doc.mobile_no || '').replace(/\D/g, '')
-
-        if (!mobileDigits) {
-          fieldError.value = 'mobile_no'
-          error.value = __('Mobile No must be a valid number')
-          return error.value
-        }
-
-        if (mobileDigits.length < 11) {
-          fieldError.value = 'mobile_no'
-          error.value = __('Mobile number must be at least 11 digits.')
-          return error.value
-        }
-        if (lead.doc.email && !lead.doc.email.includes('@')) {
-          fieldError.value = 'email'
-          error.value = __('Invalid Email address')
-          return error.value
-        }
-        if (exceedsMax(lead.doc.first_name, 140)) {
-          fieldError.value = 'first_name'
-          error.value = __('First Name cannot exceed 140 characters')
-          return error.value
-        }
-
-        if (exceedsMax(lead.doc.last_name, 140)) {
-          fieldError.value = 'last_name'
-          error.value = __('Last Name cannot exceed 140 characters')
-          return error.value
-        }
-
-        if (exceedsMax(lead.doc.email, 140)) {
-          fieldError.value = 'email'
-          error.value = __('Email cannot exceed 140 characters')
-          return error.value
-        }
-
-        if (exceedsMax(lead.doc.mobile_no, 20)) {
-          fieldError.value = 'mobile_no'
-          error.value = __('Mobile No cannot exceed 20 characters')
-          return error.value
-        }
-
-        if (exceedsMax(lead.doc.phone, 20)) {
-          fieldError.value = 'phone'
-          error.value = __('Other Phone cannot exceed 20 characters')
-          return error.value
-        }
-
-        if (exceedsMax(lead.doc.property_project, 140)) {
-          fieldError.value = 'property_project'
-          error.value = __('Project Name cannot exceed 140 characters')
-          return error.value
-        }
-        if (exceedsMax(lead.doc.notes, 1000)) {
-          fieldError.value = 'notes'
-          error.value = __('Notes cannot exceed 1000 characters')
-          return error.value
-        }
         if (!lead.doc.gender) {
           fieldError.value = 'gender'
           error.value = __('Gender is mandatory')
           return error.value
         }
+
+        if (isBlank(lead.doc.mobile_no)) {
+          fieldError.value = 'mobile_no'
+          error.value = __('Mobile No is mandatory')
+          return error.value
+        }
+
         if (!lead.doc.status) {
           error.value = __('Status is required')
           return error.value
         }
-        if (lead.doc.property_year_built &&
-          (lead.doc.property_year_built < 1900 || lead.doc.property_year_built > currentYear)) {
-          error.value = __(`Year Built must be between 1900 and ${currentYear}`)
+        if (isBlank(lead.doc.lead_owner)) {
+          fieldError.value = 'lead_owner'
+          error.value = __('Lead Owner is required')
           return error.value
         }
-        if (lead.doc.property_min_price && lead.doc.property_max_price &&
-          lead.doc.property_min_price > lead.doc.property_max_price) {
+
+        // Text max lengths
+        if (validateMax('first_name', 'First Name', 140)) return error.value
+        if (validateMax('last_name', 'Last Name', 140)) return error.value
+        if (validateMax('email', 'Email', 140)) return error.value
+        if (validateMax('mobile_no', 'Mobile No', 20)) return error.value
+        if (validateMax('phone', 'Other Phone', 20)) return error.value
+        if (validateMax('property_project', 'Project Name', 140)) return error.value
+        if (validateMax('notes', 'Notes', 1000)) return error.value
+        if (validateMax('property_city', 'City', 140)) return error.value
+        if (validateMax('property_region', 'Region / District', 140)) return error.value
+
+        // Mobile validation (Egypt)
+        const mobileRaw = String(lead.doc.mobile_no || '').trim()
+        const mobileDigits = mobileRaw.replace(/\D/g, '')
+
+        const normalizedMobile = mobileDigits.startsWith('20') && mobileDigits.length === 12
+          ? `0${mobileDigits.slice(2)}`
+          : mobileDigits
+
+        if (!/^01\d{9}$/.test(normalizedMobile)) {
+          fieldError.value = 'mobile_no'
+          error.value = __('Enter a valid 11-digit Egyptian mobile number')
+          return error.value
+        }
+
+        // Other phone validation (if entered)
+        if (!isBlank(lead.doc.phone)) {
+          const phoneDigits = String(lead.doc.phone || '').replace(/\D/g, '')
+          const normalizedPhone = phoneDigits.startsWith('20') && phoneDigits.length === 12
+            ? `0${phoneDigits.slice(2)}`
+            : phoneDigits
+
+          if (!/^01\d{9}$/.test(normalizedPhone)) {
+            fieldError.value = 'phone'
+            error.value = __('Other Phone must be a valid 11-digit Egyptian mobile number')
+            return error.value
+          }
+        }
+
+        // Email validation
+        if (!isBlank(lead.doc.email)) {
+          const emailValue = String(lead.doc.email).trim()
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+          if (!emailRegex.test(emailValue)) {
+            fieldError.value = 'email'
+            error.value = __('Invalid Email address')
+            return error.value
+          }
+        }
+
+        // Property relation project name validation
+        if (lead.doc.property_relation === 'Project') {
+          if (isBlank(lead.doc.property_project)) {
+            fieldError.value = 'property_project'
+            error.value = __('Project Name is mandatory when Property Relation is Project')
+            return error.value
+          }
+
+          const validProjectNames = (projects.data || []).map(p => p.name)
+          if (!validProjectNames.includes(lead.doc.property_project)) {
+            fieldError.value = 'property_project'
+            error.value = __('Please select a valid project from the list')
+            return error.value
+          }
+        }
+
+        // Numeric ranges
+        if (!isBlank(lead.doc.property_year_built)) {
+          const yearRaw = String(lead.doc.property_year_built).trim()
+
+          if (!/^\d{4}$/.test(yearRaw)) {
+            fieldError.value = 'property_year_built'
+            error.value = __('Year Built must be a 4-digit year')
+            return error.value
+          }
+
+          const yearNum = Number(yearRaw)
+          if (yearNum < 1900 || yearNum > currentYear) {
+            fieldError.value = 'property_year_built'
+            error.value = __(`Year Built must be between 1900 and ${currentYear}`)
+            return error.value
+          }
+
+          lead.doc.property_year_built = yearNum
+        }
+        
+        if (validateNumberRange('property_down_payment', 'Down Payment', 0, 100)) return error.value
+
+        if (lead.doc.property_space != null && lead.doc.property_space !== '') {
+          const v = Number(lead.doc.property_space)
+          if (Number.isNaN(v) || v < 0 || v > SPACE_MAX) {
+            fieldError.value = 'property_space'
+            error.value = __(`Space (sqm) must be between 0 and ${SPACE_MAX}`)
+            return error.value
+          }
+        }
+
+        if (lead.doc.property_min_price != null && lead.doc.property_min_price !== '') {
+          const v = Number(lead.doc.property_min_price)
+          if (Number.isNaN(v) || v < 0 || v > PRICE_MAX) {
+            fieldError.value = 'property_min_price'
+            error.value = __(`Min Budget must be between 0 and ${PRICE_MAX}`)
+            return error.value
+          }
+        }
+
+        if (lead.doc.property_max_price != null && lead.doc.property_max_price !== '') {
+          const v = Number(lead.doc.property_max_price)
+          if (Number.isNaN(v) || v < 0 || v > PRICE_MAX) {
+            fieldError.value = 'property_max_price'
+            error.value = __(`Max Budget must be between 0 and ${PRICE_MAX}`)
+            return error.value
+          }
+        }
+
+        if (
+          lead.doc.property_min_price != null &&
+          lead.doc.property_max_price != null &&
+          lead.doc.property_min_price !== '' &&
+          lead.doc.property_max_price !== '' &&
+          Number(lead.doc.property_min_price) > Number(lead.doc.property_max_price)
+        ) {
+          fieldError.value = 'property_min_price'
           error.value = __('Min Budget cannot exceed Max Budget')
           return error.value
         }
-        if (lead.doc.property_down_payment != null &&
-          (lead.doc.property_down_payment < 0 || lead.doc.property_down_payment > 100)) {
-          error.value = __('Down Payment must be between 0% and 100%')
+
+        // Delivery date sanity
+                // Delivery date validation
+        if (lead.doc.property_delivery_date) {
+          const deliveryDate = new Date(lead.doc.property_delivery_date)
+
+          if (Number.isNaN(deliveryDate.getTime())) {
+            fieldError.value = 'property_delivery_date'
+            error.value = __('Expected Delivery Date is invalid')
+            return error.value
+          }
+
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          deliveryDate.setHours(0, 0, 0, 0)
+
+          if (deliveryDate < today) {
+            fieldError.value = 'property_delivery_date'
+            error.value = __('Expected delivery date must be today or a future date.')
+            return error.value
+          }
+        }
+
+        if (
+          lead.doc.property_decoration === 'Core & Shell' &&
+          lead.doc.property_finishing === 'Fully Finished'
+        ) {
+          fieldError.value = 'property_finishing'
+          error.value = __('Fully Finished is not allowed when Decoration Status is Core & Shell')
           return error.value
         }
 
         isLeadCreating.value = true
       },
-      onSuccess(data) {
+      async onSuccess(data) {
         capture('lead_created')
+
+        const noteText = String(lead.doc.notes || '').trim()
+
+        if (noteText) {
+          try {
+            await createLeadNote.submit({
+              doc: {
+                doctype: 'FCRM Note',
+                title: __('Lead Note'),
+                content: noteText,
+                reference_doctype: 'CRM Lead',
+                reference_docname: data.name,
+              },
+            })
+          } catch (e) {
+            console.error('Failed to create lead note', e)
+          }
+        }
+
         isLeadCreating.value = false
         show.value = false
         router.push({ name: 'Lead', params: { leadId: data.name } })
@@ -816,8 +1062,22 @@ async function createNewLead() {
       onError(err) {
         isLeadCreating.value = false
 
-        const rawMessage = err.messages ? err.messages.join('\n') : err.message
-        error.value = stripHtml(rawMessage)
+        const rawMessage =
+          err?.messages?.join('\n') ||
+          err?.messages?.[0] ||
+          err?.message ||
+          err?.exc_type ||
+          __('Something went wrong')
+
+        let clean = stripHtml(rawMessage)
+
+        clean = clean
+          .replace(/^MandatoryError:\s*/i, '')
+          .replace(/^ValidationError:\s*/i, '')
+          .replace(/^Error:\s*/i, '')
+          .trim()
+
+        error.value = clean
       }
     },
   )

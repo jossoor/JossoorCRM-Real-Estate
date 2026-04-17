@@ -8,8 +8,50 @@
       <div class="bg-white border border-gray-100 rounded-xl shadow-sm p-6 flex flex-col h-full">
         <h3 class="text-lg font-bold text-gray-800 mb-6">{{ __('Location & Type') }}</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div v-for="fieldName in card1FieldNames" :key="fieldName">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('City') }}</label>
+            <FormControl
+              type="text"
+              v-model="props.document.doc.property_city"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('Region / District') }}</label>
+            <FormControl
+              type="text"
+              v-model="props.document.doc.property_region"
+            />
+          </div>
+
+          <div v-for="fieldName in card1RemainingFieldNames" :key="fieldName">
             <Field v-if="getField(fieldName)" :field="getField(fieldName)" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('Project Name') }}</label>
+
+            <FormControl
+              v-if="props.document.doc.property_relation === 'Project'"
+              type="select"
+              v-model="props.document.doc.property_project"
+              :options="projectOptions"
+              :placeholder="projects.data?.length ? __('Select project') : __('No results found')"
+            />
+
+            <FormControl
+              v-else
+              type="text"
+              :modelValue="props.document.doc.property_project || ''"
+              disabled
+            />
+
+            <p
+              v-if="props.document.doc.property_relation !== 'Project'"
+              class="text-xs text-gray-500 mt-1"
+            >
+              {{ __('Filled when Property Relation = Project') }}
+            </p>
           </div>
         </div>
       </div>
@@ -100,7 +142,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive, provide, toRef, watch } from 'vue'
-import { call, Button, Dialog, FormControl, toast, FeatherIcon } from 'frappe-ui'
+import { call, Button, Dialog, FormControl, toast, FeatherIcon, createResource } from 'frappe-ui'
 import { formatDate } from '@/utils'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import Field from '@/components/FieldLayout/Field.vue'
@@ -109,13 +151,10 @@ import { usersStore } from '@/stores/users'
 import { getMeta } from '@/stores/meta'
 const showCreateNoteModal = ref(false)
 
-const card1FieldNames = [
-  'property_city',
-  'property_region',
+const card1RemainingFieldNames = [
   'property_type',
   'property_subtype',
   'property_relation',
-  'property_project',
 ]
 
 const card2FieldNames = [
@@ -161,7 +200,7 @@ function getField(fieldname) {
 // Provide context for Field.vue
 provide('data', computed(() => props.document.doc))
 provide('doctype', 'CRM Lead')
-provide('preview', ref(false))
+provide('preview', ref(true))
 provide('isGridRow', ref(false))
 
 const savingNote = ref(false)
@@ -169,6 +208,49 @@ const isSaving = ref(false)
 const notes = ref([])
 const currentNoteIndex = ref(0)
 const currentNote = computed(() => notes.value[currentNoteIndex.value] || null)
+
+const allowedFields = computed(() => [
+  'property_city',
+  'property_region',
+  ...card1RemainingFieldNames,
+  'property_project',
+  ...card2FieldNames,
+  ...card3FieldNames,
+])
+
+const hasChanges = computed(() => {
+  if (!props.document?.doc || !props.document?.originalDoc) return false
+
+  return allowedFields.value.some((key) => {
+    return JSON.stringify(props.document.doc[key]) !== JSON.stringify(props.document.originalDoc[key])
+  })
+})
+
+watch(
+  hasChanges,
+  (val) => {
+    props.document.isDirty = val
+  },
+  { immediate: true }
+)
+
+const projects = createResource({
+  url: 'frappe.client.get_list',
+  params: {
+    doctype: 'Real Estate Project',
+    fields: ['name', 'project_name'],
+    limit_page_length: 999,
+    order_by: 'project_name asc',
+  },
+  auto: true,
+})
+
+const projectOptions = computed(() =>
+  (projects.data || []).map((p) => ({
+    label: p.project_name || p.name,
+    value: p.name,
+  }))
+)
 
 const newNote = reactive({
     title: '',
@@ -213,6 +295,7 @@ async function addNote() {
                 doctype: 'FCRM Note',
                 title: newNote.title || 'Note',
                 content: newNote.content,
+                reference_doctype: 'CRM Lead',
                 reference_docname: props.docname
             }
         })
@@ -247,13 +330,24 @@ async function saveLead() {
   const updatedDoc = props.document.doc
   const oldDoc = props.document.originalDoc
 
-  const allowedFields = [
-    ...card1FieldNames,
-    ...card2FieldNames,
-    ...card3FieldNames,
-  ]
+  const fieldsToSave = allowedFields.value
 
-  const changes = allowedFields.reduce((acc, key) => {
+  if (props.document.doc.property_relation === 'Project') {
+  if (!props.document.doc.property_project) {
+    toast.error(__('Project Name is required when Property Relation is Project'))
+    isSaving.value = false
+    return
+  }
+
+  const validProjectNames = (projects.data || []).map(p => p.name)
+    if (!validProjectNames.includes(props.document.doc.property_project)) {
+      toast.error(__('Please select a valid project from the list'))
+      isSaving.value = false
+      return
+    }
+  }
+
+  const changes = fieldsToSave.reduce((acc, key) => {
     if (JSON.stringify(updatedDoc[key]) !== JSON.stringify(oldDoc[key])) {
       acc[key] = updatedDoc[key]
     }
@@ -279,6 +373,7 @@ async function saveLead() {
     if (props.document.originalDoc) {
       Object.assign(props.document.originalDoc, changes)
     }
+    props.document.isDirty = false
     emit('saved', changes)
   } catch (err) {
     console.error('Property Preference save failed:', err)

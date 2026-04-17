@@ -502,6 +502,16 @@ const attrs = instance?.vnode?.props ?? {}
 async function fieldChange(value, df) {
   if (props.preview) return
 
+  // Prevent auto-save when user clicks "× Clear" in right sidebar link/searchable dropdown
+  const isClearing =
+    (df.fieldtype === 'Link' || df.fieldtype === 'Dynamic Link' || df.fieldtype === 'User') &&
+    (value === '' || value === null || value === undefined)
+
+  if (isClearing) {
+    document.doc[df.fieldname] = ''
+    return
+  }
+
   await triggerOnChange(df.fieldname, value)
 
   const hasListener = attrs['onBeforeFieldChange'] !== undefined

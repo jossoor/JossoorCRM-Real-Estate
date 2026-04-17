@@ -561,6 +561,26 @@ function runSearchLike() {
   const raw0 = (search.value ?? '').toString()
   const raw  = raw0.trim()
   hasSearched.value = true
+  
+  if (raw0 === '') {
+    console.debug('[QuickFiltersBar] runSearchLike: input cleared -> restore all leads')
+
+    emit('like-change', [])
+
+    try {
+      const vcRef = window?.__LEADS_VIEWCONTROLS__
+      if (vcRef) {
+        const vc = vcRef.value ?? vcRef
+
+        if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+        if (typeof vc.reload === 'function') vc.reload()
+      }
+    } catch (e) {
+      console.warn('[QuickFiltersBar] clear search fallback failed', e)
+    }
+
+    return
+  }
 
   if (!raw) {
     console.debug('[QuickFiltersBar] runSearchLike: whitespace-only -> show no results')
@@ -603,24 +623,33 @@ function runSearchLike() {
     const q = digitsNorm
     const payload = [
       { fieldname: 'mobile_no', value: q },
+      { fieldname: 'phone', value: q },
     ]
     console.debug('[QuickFiltersBar] runSearchLike: phone payload ->', payload)
     emit('like-change', payload)
 
-    // direct-fallback: apply like filters on viewControls (if available)
     try {
       const vcRef = window?.__LEADS_VIEWCONTROLS__
       if (vcRef) {
         const vc = vcRef.value ?? vcRef
+
+        if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+
         for (const f of payload) {
           const pl = { fieldname: f.fieldname, operator: 'like', value: `%${f.value}%` }
-          if (typeof vc.applyLikeFilter === 'function') vc.applyLikeFilter(pl)
-          else if (typeof vc.applyFilter === 'function') vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+          if (typeof vc.applyLikeFilter === 'function') {
+            vc.applyLikeFilter(pl)
+          } else if (typeof vc.applyFilter === 'function') {
+            vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+          }
         }
+
         if (typeof vc.reload === 'function') vc.reload()
         console.debug('[QuickFiltersBar] runSearchLike: direct apply invoked on viewControls')
       }
-    } catch (e) { console.warn('[QuickFiltersBar] direct applyLike fallback failed', e) }
+    } catch (e) {
+      console.warn('[QuickFiltersBar] direct applyLike fallback failed', e)
+    }
 
     return
   }
@@ -630,32 +659,22 @@ function runSearchLike() {
   console.debug('[QuickFiltersBar] runSearchLike: first_name payload ->', payload)
   emit('like-change', payload)
 
-  // direct-fallback: apply to viewControls if present
   try {
     const vcRef = window?.__LEADS_VIEWCONTROLS__
     if (vcRef) {
       const vc = vcRef.value ?? vcRef
-      const pl = { fieldname: 'first_name', operator: 'like', value: `%${raw}%` }
-      if (typeof vc.applyLikeFilter === 'function') vc.applyLikeFilter(pl)
-      else if (typeof vc.applyFilter === 'function')
-        vc.applyFilter({ filters: [['CRM Lead', 'first_name', 'like', `%${raw}%`]], replace: false })
-      if (typeof vc.reload === 'function') vc.reload()
-      console.debug('[QuickFiltersBar] runSearchLike: direct apply invoked on viewControls (first_name)')
-    }
-  } catch (e) {
-    console.warn('[QuickFiltersBar] direct applyLike fallback failed', e)
-  }
 
-  // direct-fallback: attempt to call viewControls directly (so we can test)
-  try {
-    const vcRef = window?.__LEADS_VIEWCONTROLS__
-    if (vcRef) {
-      const vc = vcRef.value ?? vcRef
+      if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+
       for (const f of payload) {
         const pl = { fieldname: f.fieldname, operator: 'like', value: `%${f.value}%` }
-        if (typeof vc.applyLikeFilter === 'function') vc.applyLikeFilter(pl)
-        else if (typeof vc.applyFilter === 'function') vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+        if (typeof vc.applyLikeFilter === 'function') {
+          vc.applyLikeFilter(pl)
+        } else if (typeof vc.applyFilter === 'function') {
+          vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+        }
       }
+
       if (typeof vc.reload === 'function') vc.reload()
       console.debug('[QuickFiltersBar] runSearchLike: direct apply invoked on viewControls')
     } else {
