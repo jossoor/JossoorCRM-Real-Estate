@@ -1,510 +1,979 @@
 {
- "actions": [],
- "allow_import": 1,
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2023-11-06 17:56:25.210449",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "organization_tab",
-  "naming_series",
-  "organization",
-  "next_step",
-  "column_break_ijan",
-  "status",
-  "deal_owner",
-  "lost_reason",
-  "lost_notes",
-  "section_break_jgpm",
-  "probability",
-  "expected_deal_value",
-  "deal_value",
-  "column_break_kpxa",
-  "expected_closure_date",
-  "closed_date",
-  "contacts_tab",
-  "contacts",
-  "contact",
-  "lead_details_tab",
-  "lead",
-  "source",
-  "column_break_wsde",
-  "lead_name",
-  "organization_details_section",
-  "organization_name",
-  "website",
-  "no_of_employees",
-  "job_title",
-  "column_break_xbyf",
-  "territory",
-  "currency",
-  "exchange_rate",
-  "annual_revenue",
-  "industry",
-  "person_section",
-  "salutation",
-  "first_name",
-  "last_name",
-  "column_break_xjmy",
-  "email",
-  "mobile_no",
-  "phone",
-  "gender",
-  "products_tab",
-  "products",
-  "section_break_ccbj",
-  "total",
-  "column_break_udbq",
-  "net_total",
-  "sla_tab",
-  "sla",
-  "sla_creation",
-  "column_break_pfvq",
-  "sla_status",
-  "communication_status",
-  "response_details_section",
-  "response_by",
-  "column_break_hpvj",
-  "first_response_time",
-  "first_responded_on",
-  "section_break_mwvg",
-  "rolling_responses",
-  "section_break_jgdr",
-  "last_response_time",
-  "column_break_evzj",
-  "last_responded_on",
-  "log_tab",
-  "status_change_log"
- ],
- "fields": [
-  {
-   "fieldname": "organization",
-   "fieldtype": "Link",
-   "label": "Organization",
-   "options": "CRM Organization"
-  },
-  {
-   "fieldname": "probability",
-   "fieldtype": "Percent",
-   "label": "Probability"
-  },
-  {
-   "fetch_from": ".annual_revenue",
-   "fieldname": "annual_revenue",
-   "fieldtype": "Currency",
-   "label": "Annual Revenue",
-   "options": "currency"
-  },
-  {
-   "fetch_from": ".website",
-   "fieldname": "website",
-   "fieldtype": "Data",
-   "label": "Website"
-  },
-  {
-   "fieldname": "next_step",
-   "fieldtype": "Data",
-   "label": "Next Step"
-  },
-  {
-   "fieldname": "lead",
-   "fieldtype": "Link",
-   "label": "Lead",
-   "options": "CRM Lead"
-  },
-  {
-   "fieldname": "deal_owner",
-   "fieldtype": "Link",
-   "label": "Deal Owner",
-   "options": "User"
-  },
-  {
-   "default": "CRM-DEAL-.YYYY.-",
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "CRM-DEAL-.YYYY.-"
-  },
-  {
-   "fieldname": "contacts_tab",
-   "fieldtype": "Tab Break",
-   "label": "Contacts"
-  },
-  {
-   "fieldname": "email",
-   "fieldtype": "Data",
-   "label": "Primary Email",
-   "options": "Email"
-  },
-  {
-   "fieldname": "mobile_no",
-   "fieldtype": "Data",
-   "label": "Primary Mobile No",
-   "options": "Phone"
-  },
-  {
-   "default": "Qualification",
-   "fieldname": "status",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Status",
-   "options": "CRM Deal Status",
-   "reqd": 1,
-   "search_index": 1
-  },
-  {
-   "fieldname": "contacts",
-   "fieldtype": "Table",
-   "label": "Contacts",
-   "options": "CRM Contacts"
-  },
-  {
-   "fieldname": "organization_tab",
-   "fieldtype": "Tab Break",
-   "label": "Organization"
-  },
-  {
-   "fieldname": "sla_tab",
-   "fieldtype": "Tab Break",
-   "label": "SLA",
-   "read_only": 1
-  },
-  {
-   "fieldname": "sla",
-   "fieldtype": "Link",
-   "label": "SLA",
-   "options": "CRM Service Level Agreement"
-  },
-  {
-   "fieldname": "response_by",
-   "fieldtype": "Datetime",
-   "label": "Response By",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_pfvq",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sla_status",
-   "fieldtype": "Select",
-   "label": "SLA Status",
-   "options": "\nFirst Response Due\nRolling Response Due\nFailed\nFulfilled",
-   "read_only": 1
-  },
-  {
-   "fieldname": "sla_creation",
-   "fieldtype": "Datetime",
-   "label": "SLA Creation",
-   "read_only": 1
-  },
-  {
-   "fieldname": "response_details_section",
-   "fieldtype": "Section Break",
-   "label": "Response Details"
-  },
-  {
-   "fieldname": "column_break_hpvj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "first_response_time",
-   "fieldtype": "Duration",
-   "label": "First Response Time",
-   "read_only": 1
-  },
-  {
-   "fieldname": "first_responded_on",
-   "fieldtype": "Datetime",
-   "label": "First Responded On",
-   "read_only": 1
-  },
-  {
-   "default": "Open",
-   "fieldname": "communication_status",
-   "fieldtype": "Link",
-   "label": "Communication Status",
-   "options": "CRM Communication Status"
-  },
-  {
-   "fetch_from": ".territory",
-   "fieldname": "territory",
-   "fieldtype": "Link",
-   "label": "Territory",
-   "options": "CRM Territory"
-  },
-  {
-   "fieldname": "source",
-   "fieldtype": "Link",
-   "label": "Source",
-   "options": "CRM Lead Source"
-  },
-  {
-   "fieldname": "no_of_employees",
-   "fieldtype": "Select",
-   "label": "No. of Employees",
-   "options": "1-10\n11-50\n51-200\n201-500\n501-1000\n1000+"
-  },
-  {
-   "fieldname": "job_title",
-   "fieldtype": "Data",
-   "label": "Job Title"
-  },
-  {
-   "fieldname": "phone",
-   "fieldtype": "Data",
-   "label": "Primary Phone",
-   "options": "Phone"
-  },
-  {
-   "fieldname": "log_tab",
-   "fieldtype": "Tab Break",
-   "label": "Log",
-   "read_only": 1
-  },
-  {
-   "fieldname": "status_change_log",
-   "fieldtype": "Table",
-   "label": "Status Change Log",
-   "options": "CRM Status Change Log"
-  },
-  {
-   "fieldname": "lead_name",
-   "fieldtype": "Data",
-   "label": "Lead Name"
-  },
-  {
-   "fieldname": "column_break_ijan",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "lead_details_tab",
-   "fieldtype": "Tab Break",
-   "label": "Lead Details"
-  },
-  {
-   "fieldname": "column_break_wsde",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "organization_details_section",
-   "fieldtype": "Section Break",
-   "label": "Organization Details"
-  },
-  {
-   "fieldname": "organization_name",
-   "fieldtype": "Data",
-   "label": "Organization Name"
-  },
-  {
-   "fieldname": "column_break_xbyf",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "industry",
-   "fieldtype": "Link",
-   "label": "Industry",
-   "options": "CRM Industry"
-  },
-  {
-   "fieldname": "person_section",
-   "fieldtype": "Section Break",
-   "label": "Person"
-  },
-  {
-   "fieldname": "salutation",
-   "fieldtype": "Link",
-   "label": "Salutation",
-   "options": "Salutation"
-  },
-  {
-   "fieldname": "first_name",
-   "fieldtype": "Data",
-   "label": "First Name"
-  },
-  {
-   "fieldname": "last_name",
-   "fieldtype": "Data",
-   "label": "Last Name"
-  },
-  {
-   "fieldname": "column_break_xjmy",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "gender",
-   "fieldtype": "Link",
-   "label": "Gender",
-   "options": "Gender"
-  },
-  {
-   "fieldname": "contact",
-   "fieldtype": "Link",
-   "label": "Contact",
-   "options": "Contact"
-  },
-  {
-   "fieldname": "currency",
-   "fieldtype": "Link",
-   "label": "Currency",
-   "options": "Currency"
-  },
-  {
-   "fieldname": "products_tab",
-   "fieldtype": "Tab Break",
-   "label": "Products"
-  },
-  {
-   "fieldname": "products",
-   "fieldtype": "Table",
-   "label": "Products",
-   "options": "CRM Products"
-  },
-  {
-   "fieldname": "section_break_ccbj",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_udbq",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total",
-   "fieldtype": "Currency",
-   "label": "Total",
-   "options": "currency",
-   "read_only": 1
-  },
-  {
-   "description": "Total after discount",
-   "fieldname": "net_total",
-   "fieldtype": "Currency",
-   "label": "Net Total",
-   "options": "currency",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_jgpm",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "deal_value",
-   "fieldtype": "Currency",
-   "label": "Deal Value",
-   "options": "currency"
-  },
-  {
-   "fieldname": "column_break_kpxa",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "lost_reason",
-   "fieldtype": "Link",
-   "label": "Lost Reason",
-   "mandatory_depends_on": "eval: doc.status == \"Lost\"",
-   "options": "CRM Lost Reason"
-  },
-  {
-   "fieldname": "lost_notes",
-   "fieldtype": "Text",
-   "label": "Lost Notes",
-   "mandatory_depends_on": "eval: doc.lost_reason == \"Other\""
-  },
-  {
-   "default": "1",
-   "description": "The rate used to convert the deal\u2019s currency to your crm's base currency (set in CRM Settings). It is set once when the currency is first added and doesn't change automatically.",
-   "fieldname": "exchange_rate",
-   "fieldtype": "Float",
-   "label": "Exchange Rate"
-  },
-  {
-   "fieldname": "expected_deal_value",
-   "fieldtype": "Currency",
-   "label": "Expected Deal Value",
-   "options": "currency"
-  },
-  {
-   "fieldname": "expected_closure_date",
-   "fieldtype": "Date",
-   "label": "Expected Closure Date"
-  },
-  {
-   "fieldname": "closed_date",
-   "fieldtype": "Date",
-   "label": "Closed Date"
-  },
-  {
-   "fieldname": "section_break_mwvg",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "rolling_responses",
-   "fieldtype": "Table",
-   "label": "Rolling Responses",
-   "options": "CRM Rolling Response Time"
-  },
-  {
-   "fieldname": "section_break_jgdr",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "last_response_time",
-   "fieldtype": "Duration",
-   "label": "Last Response Time",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_evzj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "last_responded_on",
-   "fieldtype": "Datetime",
-   "label": "Last Responded On",
-   "read_only": 1
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-11-10 21:26:42.554091",
- "modified_by": "Administrator",
- "module": "FCRM",
- "name": "CRM Deal",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Sales User",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Sales Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "show_title_field_in_link": 1,
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "title_field": "organization",
- "track_changes": 1
+    "actions": [],
+    "allow_import": 1,
+    "allow_rename": 1,
+    "autoname": "naming_series:",
+    "creation": "2023-11-06 17:56:25.210449",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "organization_tab",
+        "naming_series",
+        "organization",
+        "next_step",
+        "column_break_ijan",
+        "status",
+        "deal_owner",
+        "lost_reason",
+        "lost_notes",
+        "section_break_jgpm",
+        "probability",
+        "expected_deal_value",
+        "deal_value",
+        "column_break_kpxa",
+        "expected_closure_date",
+        "closed_date",
+        "contacts_tab",
+        "contacts",
+        "contact",
+        "lead_details_tab",
+        "lead",
+        "source",
+        "column_break_wsde",
+        "lead_name",
+        "organization_details_section",
+        "organization_name",
+        "website",
+        "no_of_employees",
+        "job_title",
+        "column_break_xbyf",
+        "territory",
+        "currency",
+        "exchange_rate",
+        "annual_revenue",
+        "industry",
+        "person_section",
+        "salutation",
+        "first_name",
+        "last_name",
+        "column_break_xjmy",
+        "email",
+        "mobile_no",
+        "phone",
+        "gender",
+        "products_tab",
+        "products",
+        "section_break_ccbj",
+        "total",
+        "column_break_udbq",
+        "net_total",
+        "sla_tab",
+        "sla",
+        "sla_creation",
+        "column_break_pfvq",
+        "sla_status",
+        "communication_status",
+        "response_details_section",
+        "response_by",
+        "column_break_hpvj",
+        "first_response_time",
+        "first_responded_on",
+        "section_break_mwvg",
+        "rolling_responses",
+        "section_break_jgdr",
+        "last_response_time",
+        "column_break_evzj",
+        "last_responded_on",
+        "log_tab",
+        "status_change_log",
+        "reservation_details_tab",
+        "reservation_section",
+        "reservation",
+        "reservation_fee",
+        "reservation_date",
+        "reservation_project",
+        "reservation_unit",
+        "payment_plan",
+        "total_cost",
+        "per_installment",
+        "installments",
+        "years",
+        "frequency",
+        "property_section",
+        "property_city",
+        "property_region",
+        "property_type",
+        "property_subtype",
+        "property_space",
+        "property_floor",
+        "property_condition",
+        "property_decoration",
+        "property_relation",
+        "property_project",
+        "property_year_built",
+        "property_delivery_date",
+        "property_bedrooms",
+        "property_bathrooms",
+        "property_view",
+        "property_finishing",
+        "property_features",
+        "property_min_price",
+        "property_max_price",
+        "property_payment",
+        "property_down_payment",
+        "property_ownership",
+        "payment_plan_section",
+        "plan_name",
+        "plan_notes",
+        "plan_area",
+        "plan_price_per_m2",
+        "plan_total_price",
+        "plan_split_downpayment",
+        "plan_downpayment_percent",
+        "plan_downpayment_date",
+        "plan_dp1_percent",
+        "plan_dp1_date",
+        "plan_dp2_percent",
+        "plan_dp2_date",
+        "plan_total_downpayment_percent",
+        "plan_total_downpayment_value",
+        "plan_start_date",
+        "plan_installment_type",
+        "plan_has_garage",
+        "plan_garage_price",
+        "plan_has_clubhouse",
+        "plan_clubhouse_price",
+        "plan_has_maintainance",
+        "plan_maintenance_fee",
+        "plan_has_garden",
+        "plan_garden_price",
+        "plan_has_roof",
+        "plan_roof_price",
+        "plan_has_pool",
+        "plan_pool_price"
+    ],
+    "fields": [
+        {
+            "fieldname": "organization",
+            "fieldtype": "Link",
+            "label": "Organization",
+            "options": "CRM Organization"
+        },
+        {
+            "fieldname": "probability",
+            "fieldtype": "Percent",
+            "label": "Probability"
+        },
+        {
+            "fetch_from": ".annual_revenue",
+            "fieldname": "annual_revenue",
+            "fieldtype": "Currency",
+            "label": "Annual Revenue",
+            "options": "currency"
+        },
+        {
+            "fetch_from": ".website",
+            "fieldname": "website",
+            "fieldtype": "Data",
+            "label": "Website"
+        },
+        {
+            "fieldname": "next_step",
+            "fieldtype": "Data",
+            "label": "Next Step"
+        },
+        {
+            "fieldname": "lead",
+            "fieldtype": "Link",
+            "label": "Lead",
+            "options": "CRM Lead"
+        },
+        {
+            "fieldname": "deal_owner",
+            "fieldtype": "Link",
+            "label": "Deal Owner",
+            "options": "User"
+        },
+        {
+            "default": "CRM-DEAL-.YYYY.-",
+            "fieldname": "naming_series",
+            "fieldtype": "Select",
+            "label": "Naming Series",
+            "options": "CRM-DEAL-.YYYY.-"
+        },
+        {
+            "fieldname": "contacts_tab",
+            "fieldtype": "Tab Break",
+            "label": "Contacts"
+        },
+        {
+            "fieldname": "email",
+            "fieldtype": "Data",
+            "label": "Primary Email",
+            "options": "Email"
+        },
+        {
+            "fieldname": "mobile_no",
+            "fieldtype": "Data",
+            "label": "Primary Mobile No",
+            "options": "Phone"
+        },
+        {
+            "default": "Qualification",
+            "fieldname": "status",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Status",
+            "options": "CRM Deal Status",
+            "reqd": 1,
+            "search_index": 1
+        },
+        {
+            "fieldname": "contacts",
+            "fieldtype": "Table",
+            "label": "Contacts",
+            "options": "CRM Contacts"
+        },
+        {
+            "fieldname": "organization_tab",
+            "fieldtype": "Tab Break",
+            "label": "Organization"
+        },
+        {
+            "fieldname": "sla_tab",
+            "fieldtype": "Tab Break",
+            "label": "SLA",
+            "read_only": 1
+        },
+        {
+            "fieldname": "sla",
+            "fieldtype": "Link",
+            "label": "SLA",
+            "options": "CRM Service Level Agreement"
+        },
+        {
+            "fieldname": "response_by",
+            "fieldtype": "Datetime",
+            "label": "Response By",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_pfvq",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "sla_status",
+            "fieldtype": "Select",
+            "label": "SLA Status",
+            "options": "\nFirst Response Due\nRolling Response Due\nFailed\nFulfilled",
+            "read_only": 1
+        },
+        {
+            "fieldname": "sla_creation",
+            "fieldtype": "Datetime",
+            "label": "SLA Creation",
+            "read_only": 1
+        },
+        {
+            "fieldname": "response_details_section",
+            "fieldtype": "Section Break",
+            "label": "Response Details"
+        },
+        {
+            "fieldname": "column_break_hpvj",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "first_response_time",
+            "fieldtype": "Duration",
+            "label": "First Response Time",
+            "read_only": 1
+        },
+        {
+            "fieldname": "first_responded_on",
+            "fieldtype": "Datetime",
+            "label": "First Responded On",
+            "read_only": 1
+        },
+        {
+            "default": "Open",
+            "fieldname": "communication_status",
+            "fieldtype": "Link",
+            "label": "Communication Status",
+            "options": "CRM Communication Status"
+        },
+        {
+            "fetch_from": ".territory",
+            "fieldname": "territory",
+            "fieldtype": "Link",
+            "label": "Territory",
+            "options": "CRM Territory"
+        },
+        {
+            "fieldname": "source",
+            "fieldtype": "Link",
+            "label": "Source",
+            "options": "CRM Lead Source"
+        },
+        {
+            "fieldname": "no_of_employees",
+            "fieldtype": "Select",
+            "label": "No. of Employees",
+            "options": "1-10\n11-50\n51-200\n201-500\n501-1000\n1000+"
+        },
+        {
+            "fieldname": "job_title",
+            "fieldtype": "Data",
+            "label": "Job Title"
+        },
+        {
+            "fieldname": "phone",
+            "fieldtype": "Data",
+            "label": "Primary Phone",
+            "options": "Phone"
+        },
+        {
+            "fieldname": "log_tab",
+            "fieldtype": "Tab Break",
+            "label": "Log",
+            "read_only": 1
+        },
+        {
+            "fieldname": "status_change_log",
+            "fieldtype": "Table",
+            "label": "Status Change Log",
+            "options": "CRM Status Change Log"
+        },
+        {
+            "fieldname": "lead_name",
+            "fieldtype": "Data",
+            "label": "Lead Name"
+        },
+        {
+            "fieldname": "column_break_ijan",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "lead_details_tab",
+            "fieldtype": "Tab Break",
+            "label": "Lead Details"
+        },
+        {
+            "fieldname": "column_break_wsde",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "organization_details_section",
+            "fieldtype": "Section Break",
+            "label": "Organization Details"
+        },
+        {
+            "fieldname": "organization_name",
+            "fieldtype": "Data",
+            "label": "Organization Name"
+        },
+        {
+            "fieldname": "column_break_xbyf",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "industry",
+            "fieldtype": "Link",
+            "label": "Industry",
+            "options": "CRM Industry"
+        },
+        {
+            "fieldname": "person_section",
+            "fieldtype": "Section Break",
+            "label": "Person"
+        },
+        {
+            "fieldname": "salutation",
+            "fieldtype": "Link",
+            "label": "Salutation",
+            "options": "Salutation"
+        },
+        {
+            "fieldname": "first_name",
+            "fieldtype": "Data",
+            "label": "First Name"
+        },
+        {
+            "fieldname": "last_name",
+            "fieldtype": "Data",
+            "label": "Last Name"
+        },
+        {
+            "fieldname": "column_break_xjmy",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "gender",
+            "fieldtype": "Link",
+            "label": "Gender",
+            "options": "Gender"
+        },
+        {
+            "fieldname": "contact",
+            "fieldtype": "Link",
+            "label": "Contact",
+            "options": "Contact"
+        },
+        {
+            "fieldname": "currency",
+            "fieldtype": "Link",
+            "label": "Currency",
+            "options": "Currency"
+        },
+        {
+            "fieldname": "products_tab",
+            "fieldtype": "Tab Break",
+            "label": "Products"
+        },
+        {
+            "fieldname": "products",
+            "fieldtype": "Table",
+            "label": "Products",
+            "options": "CRM Products"
+        },
+        {
+            "fieldname": "section_break_ccbj",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "column_break_udbq",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "total",
+            "fieldtype": "Currency",
+            "label": "Total",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "description": "Total after discount",
+            "fieldname": "net_total",
+            "fieldtype": "Currency",
+            "label": "Net Total",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_break_jgpm",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "deal_value",
+            "fieldtype": "Currency",
+            "label": "Deal Value",
+            "options": "currency"
+        },
+        {
+            "fieldname": "column_break_kpxa",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "lost_reason",
+            "fieldtype": "Link",
+            "label": "Lost Reason",
+            "mandatory_depends_on": "eval: doc.status == \"Lost\"",
+            "options": "CRM Lost Reason"
+        },
+        {
+            "fieldname": "lost_notes",
+            "fieldtype": "Text",
+            "label": "Lost Notes",
+            "mandatory_depends_on": "eval: doc.lost_reason == \"Other\""
+        },
+        {
+            "default": "1",
+            "description": "The rate used to convert the deal\u2019s currency to your crm's base currency (set in CRM Settings). It is set once when the currency is first added and doesn't change automatically.",
+            "fieldname": "exchange_rate",
+            "fieldtype": "Float",
+            "label": "Exchange Rate"
+        },
+        {
+            "fieldname": "expected_deal_value",
+            "fieldtype": "Currency",
+            "label": "Expected Deal Value",
+            "options": "currency"
+        },
+        {
+            "fieldname": "expected_closure_date",
+            "fieldtype": "Date",
+            "label": "Expected Closure Date"
+        },
+        {
+            "fieldname": "closed_date",
+            "fieldtype": "Date",
+            "label": "Closed Date"
+        },
+        {
+            "fieldname": "section_break_mwvg",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "rolling_responses",
+            "fieldtype": "Table",
+            "label": "Rolling Responses",
+            "options": "CRM Rolling Response Time"
+        },
+        {
+            "fieldname": "section_break_jgdr",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "last_response_time",
+            "fieldtype": "Duration",
+            "label": "Last Response Time",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_evzj",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "last_responded_on",
+            "fieldtype": "Datetime",
+            "label": "Last Responded On",
+            "read_only": 1
+        },
+        {
+            "fieldname": "reservation_details_tab",
+            "fieldtype": "Tab Break",
+            "label": "Reservation Details"
+        },
+        {
+            "fieldname": "reservation_section",
+            "fieldtype": "Section Break",
+            "label": "Reservation"
+        },
+        {
+            "fieldname": "reservation",
+            "fieldtype": "Link",
+            "label": "Reservation",
+            "options": "Reservation",
+            "read_only": 1
+        },
+        {
+            "fieldname": "reservation_fee",
+            "fieldtype": "Currency",
+            "label": "Reservation Fee",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "reservation_date",
+            "fieldtype": "Date",
+            "label": "Reservation Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "reservation_project",
+            "fieldtype": "Link",
+            "label": "Reservation Project",
+            "options": "Real Estate Project",
+            "read_only": 1
+        },
+        {
+            "fieldname": "reservation_unit",
+            "fieldtype": "Link",
+            "label": "Reservation Unit",
+            "options": "Unit",
+            "read_only": 1
+        },
+        {
+            "fieldname": "payment_plan",
+            "fieldtype": "Link",
+            "label": "Payment Plan",
+            "options": "Payment Plan",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_cost",
+            "fieldtype": "Currency",
+            "label": "Total Cost",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "per_installment",
+            "fieldtype": "Currency",
+            "label": "Per Installment",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "installments",
+            "fieldtype": "Int",
+            "label": "Number of Installments",
+            "read_only": 1
+        },
+        {
+            "fieldname": "years",
+            "fieldtype": "Int",
+            "label": "Number of Years",
+            "read_only": 1
+        },
+        {
+            "fieldname": "frequency",
+            "fieldtype": "Data",
+            "label": "Frequency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_section",
+            "fieldtype": "Section Break",
+            "label": "Property Preferences"
+        },
+        {
+            "fieldname": "property_city",
+            "fieldtype": "Data",
+            "label": "City",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_region",
+            "fieldtype": "Data",
+            "label": "Region / District",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_type",
+            "fieldtype": "Data",
+            "label": "Property Type",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_subtype",
+            "fieldtype": "Data",
+            "label": "Property Subtype",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_space",
+            "fieldtype": "Int",
+            "label": "Property Space (sqm)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_floor",
+            "fieldtype": "Data",
+            "label": "Floor Preference",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_condition",
+            "fieldtype": "Data",
+            "label": "Property Condition",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_decoration",
+            "fieldtype": "Data",
+            "label": "Decoration Status",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_relation",
+            "fieldtype": "Data",
+            "label": "Property Relation",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_project",
+            "fieldtype": "Data",
+            "label": "Project Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_year_built",
+            "fieldtype": "Data",
+            "label": "Year Built",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_delivery_date",
+            "fieldtype": "Date",
+            "label": "Expected Delivery Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_bedrooms",
+            "fieldtype": "Data",
+            "label": "Bedrooms",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_bathrooms",
+            "fieldtype": "Data",
+            "label": "Bathrooms",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_view",
+            "fieldtype": "Data",
+            "label": "View Preference",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_finishing",
+            "fieldtype": "Data",
+            "label": "Finishing Level",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_features",
+            "fieldtype": "Data",
+            "label": "Key Feature",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_min_price",
+            "fieldtype": "Currency",
+            "label": "Min Budget",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_max_price",
+            "fieldtype": "Currency",
+            "label": "Max Budget",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_payment",
+            "fieldtype": "Data",
+            "label": "Payment Method",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_down_payment",
+            "fieldtype": "Percent",
+            "label": "Down Payment (%)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "property_ownership",
+            "fieldtype": "Data",
+            "label": "Ownership Type",
+            "read_only": 1
+        },
+        {
+            "fieldname": "payment_plan_section",
+            "fieldtype": "Section Break",
+            "label": "Payment Plan Snapshot"
+        },
+        {
+            "fieldname": "plan_name",
+            "fieldtype": "Data",
+            "label": "Plan Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_notes",
+            "fieldtype": "Small Text",
+            "label": "Plan Notes",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_area",
+            "fieldtype": "Float",
+            "label": "Area (m²)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_price_per_m2",
+            "fieldtype": "Currency",
+            "label": "Price / m²",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_total_price",
+            "fieldtype": "Currency",
+            "label": "Total Price",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_split_downpayment",
+            "fieldtype": "Check",
+            "label": "Split Down Payment",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_downpayment_percent",
+            "fieldtype": "Percent",
+            "label": "Down Payment (%)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_downpayment_date",
+            "fieldtype": "Date",
+            "label": "Down Payment Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_dp1_percent",
+            "fieldtype": "Percent",
+            "label": "DP1 (%)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_dp1_date",
+            "fieldtype": "Date",
+            "label": "DP1 Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_dp2_percent",
+            "fieldtype": "Percent",
+            "label": "DP2 (%)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_dp2_date",
+            "fieldtype": "Date",
+            "label": "DP2 Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_total_downpayment_percent",
+            "fieldtype": "Percent",
+            "label": "Total DP (%)",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_total_downpayment_value",
+            "fieldtype": "Currency",
+            "label": "Total DP (Value)",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_start_date",
+            "fieldtype": "Date",
+            "label": "Start Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_installment_type",
+            "fieldtype": "Data",
+            "label": "Installment Type",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_has_garage",
+            "fieldtype": "Check",
+            "label": "Include Garage",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_garage_price",
+            "fieldtype": "Currency",
+            "label": "Garage Price",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_has_clubhouse",
+            "fieldtype": "Check",
+            "label": "Include Clubhouse",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_clubhouse_price",
+            "fieldtype": "Currency",
+            "label": "Clubhouse Price",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_has_maintainance",
+            "fieldtype": "Check",
+            "label": "Has Maintainance",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_maintenance_fee",
+            "fieldtype": "Currency",
+            "label": "Maintenance Fee",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_has_garden",
+            "fieldtype": "Check",
+            "label": "Has Garden",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_garden_price",
+            "fieldtype": "Currency",
+            "label": "Garden Price",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_has_roof",
+            "fieldtype": "Check",
+            "label": "Has Roof",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_roof_price",
+            "fieldtype": "Currency",
+            "label": "Roof Price",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_has_pool",
+            "fieldtype": "Check",
+            "label": "Has Pool",
+            "read_only": 1
+        },
+        {
+            "fieldname": "plan_pool_price",
+            "fieldtype": "Currency",
+            "label": "Pool Price",
+            "options": "currency",
+            "read_only": 1
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2025-11-10 21:26:42.554091",
+    "modified_by": "Administrator",
+    "module": "FCRM",
+    "name": "CRM Deal",
+    "naming_rule": "By \"Naming Series\" field",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Sales User",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Sales Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "show_title_field_in_link": 1,
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "title_field": "organization",
+    "track_changes": 1
 }

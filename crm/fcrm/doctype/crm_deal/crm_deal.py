@@ -256,10 +256,9 @@ class CRMDeal(Document):
 	def default_list_data():
 		columns = [
 			{
-				"label": "Organization",
-				"type": "Link",
-				"key": "organization",
-				"options": "CRM Organization",
+				"label": "Deal",
+				"type": "Data",
+				"key": "name",
 				"width": "11rem",
 			},
 			{
@@ -302,7 +301,6 @@ class CRMDeal(Document):
 		]
 		rows = [
 			"name",
-			"organization",
 			"annual_revenue",
 			"status",
 			"email",
@@ -322,7 +320,7 @@ class CRMDeal(Document):
 	def default_kanban_settings():
 		return {
 			"column_field": "status",
-			"title_field": "organization",
+			"title_field": "name",
 			"kanban_fields": '["annual_revenue", "email", "mobile_no", "_assign", "modified"]',
 		}
 
