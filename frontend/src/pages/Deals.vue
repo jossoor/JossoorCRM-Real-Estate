@@ -48,18 +48,6 @@
         </div>
         <div
           v-else-if="
-            titleField === 'organization' && getRow(itemName, titleField).label
-          "
-        >
-          <Avatar
-            class="flex items-center"
-            :image="getRow(itemName, titleField).logo"
-            :label="getRow(itemName, titleField).label"
-            size="sm"
-          />
-        </div>
-        <div
-          v-else-if="
             titleField === 'deal_owner' &&
             getRow(itemName, titleField).full_name
           "
@@ -113,15 +101,6 @@
       >
         <div v-if="fieldName === 'status'">
           <IndicatorIcon :class="getRow(itemName, fieldName).color" />
-        </div>
-        <div v-else-if="fieldName === 'organization'">
-          <Avatar
-            v-if="getRow(itemName, fieldName).label"
-            class="flex items-center"
-            :image="getRow(itemName, fieldName).logo"
-            :label="getRow(itemName, fieldName).label"
-            size="xs"
-          />
         </div>
         <div v-else-if="fieldName === 'deal_owner'">
           <Avatar
@@ -281,7 +260,6 @@ import ViewControls from '@/components/ViewControls.vue'
 import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
-import { organizationsStore } from '@/stores/organizations'
 import { statusesStore } from '@/stores/statuses'
 import { callEnabled } from '@/composables/settings'
 import { formatDate, timeAgo, website, formatTime } from '@/utils'
@@ -293,7 +271,6 @@ const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
   getMeta('CRM Deal')
 const { makeCall } = globalStore()
 const { getUser } = usersStore()
-const { getOrganization } = organizationsStore()
 const { getDealStatus } = statusesStore()
 
 const route = useRoute()
@@ -413,12 +390,7 @@ function parseRows(rows, columns = []) {
         _rows[row] = getFormattedPercent(row, deal)
       }
 
-      if (row == 'organization') {
-        _rows[row] = {
-          label: deal.organization,
-          logo: getOrganization(deal.organization)?.organization_logo,
-        }
-      } else if (row === 'website') {
+      if (row === 'website') {
         _rows[row] = website(deal.website)
       } else if (row == 'status') {
         _rows[row] = {

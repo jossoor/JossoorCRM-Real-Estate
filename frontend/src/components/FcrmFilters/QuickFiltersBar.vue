@@ -67,6 +67,7 @@
       <!-- RIGHT: chips -->
       <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
         <!-- Status -->
+                <!-- Status -->
         <div class="flex h-7 items-center rounded bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700">
           <Dropdown
             class="h-full"
@@ -78,9 +79,16 @@
             <template #default="{ open }">
               <button
                 class="flex h-full items-center gap-1.5 px-2 rounded-l cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                :class="status ? '' : 'rounded-r pr-2'"
+                type="button"
               >
                 <div :class="['h-2 w-2 rounded-full', statusDotClass]"></div>
                 <span class="max-w-[120px] truncate">{{ statusLabel }}</span>
+                <FeatherIcon
+                  v-if="!status"
+                  name="chevron-down"
+                  class="h-4 w-4 opacity-50 pointer-events-none"
+                />
               </button>
             </template>
           </Dropdown>
@@ -88,12 +96,10 @@
             v-if="status"
             @click.stop="clearStatus"
             class="flex h-full items-center px-1.5 rounded-r hover:bg-black/10 dark:hover:bg-white/10"
+            type="button"
           >
             <FeatherIcon name="x" class="h-3 w-3 opacity-50 hover:opacity-100" />
           </button>
-          <div v-else class="pr-2 pointer-events-none flex items-center">
-            <FeatherIcon name="chevron-down" class="h-4 w-4 opacity-50" />
-          </div>
         </div>
 
         <!-- Project -->
@@ -105,9 +111,16 @@
             <template #default="{ open }">
               <button
                 class="flex h-full items-center gap-1.5 px-2 rounded-l cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                :class="projectValue ? '' : 'rounded-r pr-2'"
+                type="button"
               >
                 <FeatherIcon name="briefcase" class="h-3.5 w-3.5 opacity-70" />
                 <span class="max-w-[120px] truncate">{{ projectChipText }}</span>
+                <FeatherIcon
+                  v-if="!projectValue"
+                  name="chevron-down"
+                  class="h-4 w-4 opacity-50 pointer-events-none"
+                />
               </button>
             </template>
           </Dropdown>
@@ -115,12 +128,10 @@
             v-if="projectValue"
             @click.stop="clearProject"
             class="flex h-full items-center px-1.5 rounded-r hover:bg-black/10 dark:hover:bg-white/10"
+            type="button"
           >
             <FeatherIcon name="x" class="h-3 w-3 opacity-50 hover:opacity-100" />
           </button>
-          <div v-else class="pr-2 pointer-events-none flex items-center">
-            <FeatherIcon name="chevron-down" class="h-4 w-4 opacity-50" />
-          </div>
         </div>
 
         <!-- Last Contacted -->
@@ -129,6 +140,8 @@
             <button
               @click="togglePopover"
               class="flex h-full items-center gap-1.5 px-2 rounded-l cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+              :class="(lastFrom || lastTo) ? '' : 'rounded-r pr-2'"
+              type="button"
             >
               <FeatherIcon name="calendar" class="h-3.5 w-3.5 opacity-70" />
               <span
@@ -137,17 +150,21 @@
               >
                 {{ displayDateRange }}
               </span>
+              <FeatherIcon
+                v-if="!(lastFrom || lastTo)"
+                name="chevron-down"
+                class="h-4 w-4 opacity-50 pointer-events-none"
+              />
             </button>
+
             <button
               v-if="lastFrom || lastTo"
               @click.stop="clearLastContacted"
               class="flex h-full items-center px-1.5 rounded-r hover:bg-black/10 dark:hover:bg-white/10"
+              type="button"
             >
               <FeatherIcon name="x" class="h-3 w-3 opacity-50 hover:opacity-100" />
             </button>
-            <div v-else class="pr-2 pointer-events-none flex items-center">
-              <FeatherIcon name="chevron-down" class="h-4 w-4 opacity-50" />
-            </div>
           </div>
 
           <transition name="fade">
@@ -220,9 +237,7 @@
               </div>
             </div>
           </transition>
-        </div>
-
-
+        </div> 
       </div>
     </div>
   </div>
@@ -561,6 +576,26 @@ function runSearchLike() {
   const raw0 = (search.value ?? '').toString()
   const raw  = raw0.trim()
   hasSearched.value = true
+  
+  if (raw0 === '') {
+    console.debug('[QuickFiltersBar] runSearchLike: input cleared -> restore all leads')
+
+    emit('like-change', [])
+
+    try {
+      const vcRef = window?.__LEADS_VIEWCONTROLS__
+      if (vcRef) {
+        const vc = vcRef.value ?? vcRef
+
+        if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+        if (typeof vc.reload === 'function') vc.reload()
+      }
+    } catch (e) {
+      console.warn('[QuickFiltersBar] clear search fallback failed', e)
+    }
+
+    return
+  }
 
   if (!raw) {
     console.debug('[QuickFiltersBar] runSearchLike: whitespace-only -> show no results')
@@ -603,24 +638,33 @@ function runSearchLike() {
     const q = digitsNorm
     const payload = [
       { fieldname: 'mobile_no', value: q },
+      { fieldname: 'phone', value: q },
     ]
     console.debug('[QuickFiltersBar] runSearchLike: phone payload ->', payload)
     emit('like-change', payload)
 
-    // direct-fallback: apply like filters on viewControls (if available)
     try {
       const vcRef = window?.__LEADS_VIEWCONTROLS__
       if (vcRef) {
         const vc = vcRef.value ?? vcRef
+
+        if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+
         for (const f of payload) {
           const pl = { fieldname: f.fieldname, operator: 'like', value: `%${f.value}%` }
-          if (typeof vc.applyLikeFilter === 'function') vc.applyLikeFilter(pl)
-          else if (typeof vc.applyFilter === 'function') vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+          if (typeof vc.applyLikeFilter === 'function') {
+            vc.applyLikeFilter(pl)
+          } else if (typeof vc.applyFilter === 'function') {
+            vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+          }
         }
+
         if (typeof vc.reload === 'function') vc.reload()
         console.debug('[QuickFiltersBar] runSearchLike: direct apply invoked on viewControls')
       }
-    } catch (e) { console.warn('[QuickFiltersBar] direct applyLike fallback failed', e) }
+    } catch (e) {
+      console.warn('[QuickFiltersBar] direct applyLike fallback failed', e)
+    }
 
     return
   }
@@ -630,32 +674,22 @@ function runSearchLike() {
   console.debug('[QuickFiltersBar] runSearchLike: first_name payload ->', payload)
   emit('like-change', payload)
 
-  // direct-fallback: apply to viewControls if present
   try {
     const vcRef = window?.__LEADS_VIEWCONTROLS__
     if (vcRef) {
       const vc = vcRef.value ?? vcRef
-      const pl = { fieldname: 'first_name', operator: 'like', value: `%${raw}%` }
-      if (typeof vc.applyLikeFilter === 'function') vc.applyLikeFilter(pl)
-      else if (typeof vc.applyFilter === 'function')
-        vc.applyFilter({ filters: [['CRM Lead', 'first_name', 'like', `%${raw}%`]], replace: false })
-      if (typeof vc.reload === 'function') vc.reload()
-      console.debug('[QuickFiltersBar] runSearchLike: direct apply invoked on viewControls (first_name)')
-    }
-  } catch (e) {
-    console.warn('[QuickFiltersBar] direct applyLike fallback failed', e)
-  }
 
-  // direct-fallback: attempt to call viewControls directly (so we can test)
-  try {
-    const vcRef = window?.__LEADS_VIEWCONTROLS__
-    if (vcRef) {
-      const vc = vcRef.value ?? vcRef
+      if (typeof vc.clearLikeFilters === 'function') vc.clearLikeFilters()
+
       for (const f of payload) {
         const pl = { fieldname: f.fieldname, operator: 'like', value: `%${f.value}%` }
-        if (typeof vc.applyLikeFilter === 'function') vc.applyLikeFilter(pl)
-        else if (typeof vc.applyFilter === 'function') vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+        if (typeof vc.applyLikeFilter === 'function') {
+          vc.applyLikeFilter(pl)
+        } else if (typeof vc.applyFilter === 'function') {
+          vc.applyFilter({ filters: [['CRM Lead', f.fieldname, 'like', `%${f.value}%`]], replace: false })
+        }
       }
+
       if (typeof vc.reload === 'function') vc.reload()
       console.debug('[QuickFiltersBar] runSearchLike: direct apply invoked on viewControls')
     } else {

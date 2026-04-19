@@ -11,6 +11,7 @@
     :whatsappBox="whatsappBox"
     :modalRef="modalRef"
     :createFilter="createFilter"
+    :hideNewButton="title === 'Reservation'"
     @new="onNewFromHeader"
   />
   <FadedScrollableDiv
@@ -27,6 +28,7 @@
     <div v-else-if="title == 'Events'" class="h-full activity">
       <EventArea :doctype="doctype" :docname="docname" />
     </div>
+
     <div
       v-else-if="
         activities?.length ||
@@ -390,6 +392,9 @@
         @afterSave="(data) => emit('afterSave', data)"
       />
     </div>
+    <div v-else-if="title == 'Reservation'" class="h-full flex flex-col px-3 sm:px-10 py-4 overflow-y-auto">
+      <DealReservationTab :doc="doc" />
+    </div>
     <div
       v-else
       class="flex flex-1 flex-col items-center justify-center gap-3 text-xl font-medium text-ink-gray-4"
@@ -469,6 +474,7 @@
   />
 </template>
 <script setup>
+import DealReservationTab from '@/components/Activities/DealReservationTab.vue'
 import ActivityHeader from '@/components/Activities/ActivityHeader.vue'
 import EmailArea from '@/components/Activities/EmailArea.vue'
 import CommentArea from '@/components/Activities/CommentArea.vue'

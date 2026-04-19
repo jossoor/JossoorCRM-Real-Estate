@@ -175,7 +175,7 @@
       v-else-if="field.fieldtype === 'Int'"
       type="text"
       :placeholder="getPlaceholder(field)"
-      :value="data[field.fieldname] || '0'"
+      :value="data[field.fieldname] ?? ''"
       :disabled="Boolean(field.read_only)"
       :description="field.description"
       @update:modelValue="fieldChange($event, field)"
@@ -342,14 +342,19 @@ function isFieldVisible(field) {
 }
 
 const getPlaceholder = (field) => {
+  if (preview.value) {
+    return ''
+  }
+
   if (field.placeholder) {
     return __(field.placeholder)
   }
+
   if (['Select', 'Link'].includes(field.fieldtype)) {
     return __('Select {0}', [__(field.label)])
-  } else {
-    return __('Enter {0}', [__(field.label)])
   }
+
+  return __('Enter {0}', [__(field.label)])
 }
 
 const getOptions = (options) => {
@@ -389,7 +394,7 @@ function fieldChange(value, df) {
 
 function getDataValue(value, field) {
   if (field.fieldtype === 'Duration') {
-    return value || 0
+    return value ?? ''
   }
   return value
 }

@@ -203,6 +203,9 @@ doc_events = {
         "on_load": ["crm.api.task_status.check_and_update_task_status"],
         "on_update": ["crm.api.task_status.check_and_update_task_status"],
     },
+	"Reservation": {
+		"on_update": ["crm.fcrm.doctype.reservation.reservation.create_deal_from_reservation"]
+	},
 
 }
 

@@ -542,11 +542,11 @@ const tabs = computed(() => {
       label: __('Activity'),
       icon: ActivityIcon,
     },
-    {
-      name: 'Emails',
-      label: __('Emails'),
-      icon: EmailIcon,
-    },
+    //{
+    //  name: 'Emails',
+    //  label: __('Emails'),
+    //  icon: EmailIcon,
+    //},
     {
       name: 'Comments',
       label: __('Comments'),
@@ -558,10 +558,15 @@ const tabs = computed(() => {
       icon: DetailsIcon,
     },
     {
-      name: 'Calls',
-      label: __('Calls'),
-      icon: PhoneIcon,
+      name: 'Reservation',
+      label: __('Reservation'),
+      icon: DetailsIcon,
     },
+    //{
+    //  name: 'Calls',
+    //  label: __('Calls'),
+    //  icon: PhoneIcon,
+    //},
     {
       name: 'Tasks',
       label: __('Tasks'),
@@ -599,23 +604,18 @@ const sections = createResource({
 if (!sections.data) sections.fetch()
 
 function getParsedSections(_sections) {
+  _sections = _sections.filter((section) => section.name !== 'organization_section')
+
   _sections.forEach((section) => {
     if (section.name == 'contacts_section') return
-    section.columns[0].fields.forEach((field) => {
-      if (field.fieldname == 'organization') {
-        field.create = (value, close) => {
-          _organization.value.organization_name = value
-          showOrganizationModal.value = true
-          close()
-        }
-        field.link = (org) =>
-          router.push({
-            name: 'Organization',
-            params: { organizationId: org },
-          })
-      }
-    })
+
+    if (section.columns?.length) {
+      section.columns.forEach((col) => {
+        col.fields = (col.fields || []).filter((field) => field.fieldname !== 'organization')
+      })
+    }
   })
+
   return _sections
 }
 

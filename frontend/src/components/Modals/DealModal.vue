@@ -27,18 +27,10 @@
         </div>
         <div>
           <div
-            v-if="hasOrganizationSections || hasContactSections"
+            v-if="hasContactSections"
             class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3"
           >
             <div
-              v-if="hasOrganizationSections"
-              class="flex items-center gap-3 text-sm text-ink-gray-5"
-            >
-              <div>{{ __('Choose Existing Organization') }}</div>
-              <Switch v-model="chooseExistingOrganization" />
-            </div>
-            <div
-              v-if="hasContactSections"
               class="flex items-center gap-3 text-sm text-ink-gray-5"
             >
               <div>{{ __('Choose Existing Contact') }}</div>
@@ -46,7 +38,7 @@
             </div>
           </div>
           <div
-            v-if="hasOrganizationSections || hasContactSections"
+            v-if="hasContactSections"
             class="h-px w-full border-t my-5"
           />
           <FieldLayout
@@ -99,24 +91,18 @@ const error = ref(null)
 
 const { document: deal, triggerOnBeforeCreate } = useDocument('CRM Deal')
 
-const hasOrganizationSections = ref(true)
 const hasContactSections = ref(true)
 
 const isDealCreating = ref(false)
 const chooseExistingContact = ref(false)
-const chooseExistingOrganization = ref(false)
 const fieldLayoutRef = ref(null)
 
 watch(
-  [chooseExistingOrganization, chooseExistingContact],
-  ([organization, contact]) => {
+  [chooseExistingContact],
+  ([contact]) => {
     tabs.data.forEach((tab) => {
       tab.sections.forEach((section) => {
-        if (section.name === 'organization_section') {
-          section.hidden = !organization
-        } else if (section.name === 'organization_details_section') {
-          section.hidden = organization
-        } else if (section.name === 'contact_section') {
+        if (section.name === 'contact_section') {
           section.hidden = !contact
         } else if (section.name === 'contact_details_section') {
           section.hidden = contact
@@ -132,37 +118,45 @@ const tabs = createResource({
   params: { doctype: 'CRM Deal', type: 'Quick Entry' },
   auto: true,
   transform: (_tabs) => {
-    hasOrganizationSections.value = false
-    return _tabs.forEach((tab) => {
+    hasContactSections.value = false
+
+    _tabs.forEach((tab) => {
+      tab.sections = (tab.sections || []).filter(
+        (section) =>
+          !['organization_section', 'organization_details_section'].includes(
+            section.name,
+          ),
+      )
+
       tab.sections.forEach((section) => {
-        section.columns.forEach((column) => {
+        section.columns?.forEach((column) => {
           if (
-            ['organization_section', 'organization_details_section'].includes(
-              section.name,
-            )
-          ) {
-            hasOrganizationSections.value = true
-          } else if (
-            ['contact_section', 'contact_details_section'].includes(
-              section.name,
-            )
+            ['contact_section', 'contact_details_section'].includes(section.name)
           ) {
             hasContactSections.value = true
           }
+
+          column.fields = (column.fields || []).filter((field) => {
+            const fieldname = typeof field === 'string' ? field : field.fieldname
+            return fieldname !== 'organization'
+          })
+
           column.fields.forEach((field) => {
-            if (field.fieldname == 'status') {
+            if (typeof field === 'object' && field.fieldname === 'status') {
               field.fieldtype = 'Select'
               field.options = dealStatuses.value
-              field.prefix = getDealStatus(deal.doc.status).color
+              field.prefix = getDealStatus(deal.doc.status)?.color
             }
 
-            if (field.fieldtype === 'Table') {
+            if (typeof field === 'object' && field.fieldtype === 'Table') {
               deal.doc[field.fieldname] = []
             }
           })
         })
       })
     })
+
+    return _tabs
   },
 })
 
@@ -178,12 +172,17 @@ async function createDeal() {
   if (deal.doc.website && !deal.doc.website.startsWith('http')) {
     deal.doc.website = 'https://' + deal.doc.website
   }
+
+  deal.doc['organization'] = null
+
   if (chooseExistingContact.value) {
     deal.doc['first_name'] = null
     deal.doc['last_name'] = null
     deal.doc['email'] = null
     deal.doc['mobile_no'] = null
-  } else deal.doc['contact'] = null
+  } else {
+    deal.doc['contact'] = null
+  }
 
   await triggerOnBeforeCreate?.()
 

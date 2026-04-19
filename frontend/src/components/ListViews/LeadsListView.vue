@@ -2,7 +2,7 @@
   <ListView
     :class="$attrs.class"
     :columns="columns"
-    :rows="rows"
+    :rows="paginatedRows"
     :options="{
       selectable: options.selectable,
       showTooltip: options.showTooltip,
@@ -33,7 +33,7 @@
       </ListHeaderItem>
     </ListHeader>
 
-    <ListRows :rows="rows" v-slot="{ idx, column, item, row }" doctype="CRM Lead" @click="handleRowClick">
+    <ListRows :rows="paginatedRows" v-slot="{ idx, column, item, row }" doctype="CRM Lead" @click="handleRowClick">
       <div
         v-if="column.key === '_assign'"
         class="h-full w-full"
@@ -293,28 +293,57 @@
 
   </ListView>
 
-  <CustomListFooter
+  <div
     v-if="pageLengthCount"
-    class="border-t sm:px-5 px-3 py-2"
-    v-model="pageLengthCount"
-    :options="{
-      rowCount: options.rowCount,
-      totalCount: options.totalCount,
-    }"
-    @loadMore="emit('loadMore')"
-  />
-  
+    class="border-t sm:px-5 px-3 py-2 flex items-center justify-between gap-3 flex-wrap"
+  >
+    <div class="text-sm text-gray-600">
+      Showing {{ startRow }}–{{ endRow }} of {{ totalRows }}
+    </div>
+
+    <div class="flex items-center gap-2">
+      <Button
+        :label="__('Previous')"
+        variant="outline"
+        :disabled="currentPage <= 1"
+        @click="goPrev"
+      />
+
+      <span class="text-sm text-gray-700 min-w-[70px] text-center">
+        {{ __('Page') }} {{ currentPage }} / {{ totalPages }}
+      </span>
+
+      <Button
+        :label="__('Next')"
+        variant="outline"
+        :disabled="currentPage >= totalPages"
+        @click="goNext"
+      />
+
+      <select
+        v-model.number="pageLengthCount"
+        class="ml-2 h-8 rounded border px-2 text-sm"
+        @change="handlePageSizeChange"
+      >
+        <option :value="10">10</option>
+        <option :value="20">20</option>
+        <option :value="50">50</option>
+        <option :value="100">100</option>
+      </select>
+    </div>
+  </div>
+
   <ListBulkActions ref="listBulkActionsRef" v-model="list" doctype="CRM Lead" />
 </template>
 
 <script setup>
+import CustomListFooter from '@/components/CustomListFooter.vue'
 import LeadCommentsQuick from '@/components/LeadCommentsQuick.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import MultipleAvatar from '@/components/MultipleAvatar.vue'
 import ListBulkActions from '@/components/ListBulkActions.vue'
 import ListRows from '@/components/ListViews/ListRows.vue'
-import CustomListFooter from '@/components/CustomListFooter.vue'
 import {
   Avatar,
   ListView,
@@ -336,17 +365,17 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, Teleport } 
 import { useRoute, RouterLink } from 'vue-router'
 
 const props = defineProps({
-  rows: { type: Array, required: true },
-  columns: { type: Array, required: true },
+  rows: {
+    type: Array,
+    default: () => [],
+  },
+  columns: {
+    type: Array,
+    default: () => [],
+  },
   options: {
     type: Object,
-    default: () => ({
-      selectable: true,
-      showTooltip: true,
-      resizeColumn: false,
-      totalCount: 0,
-      rowCount: 0,
-    }),
+    default: () => ({}),
   },
 })
 
@@ -380,6 +409,86 @@ const dropdownPosition = ref({})
 const availableStatuses = computed(() => {
   return statusOptions('lead') || []
 })
+
+const currentPage = ref(1)
+
+const totalRows = computed(() => {
+  return Number(props.options?.totalCount || props.options?.rowCount || props.rows?.length || 0)
+})
+
+const safePageSize = computed(() => {
+  const n = Number(pageLengthCount.value || 20)
+  return n > 0 ? n : 20
+})
+
+const totalPages = computed(() => {
+  const total = totalRows.value || props.rows.length || 0
+  return Math.max(1, Math.ceil(total / safePageSize.value))
+})
+
+const startIndex = computed(() => {
+  return (currentPage.value - 1) * safePageSize.value
+})
+
+const endIndex = computed(() => {
+  return startIndex.value + safePageSize.value
+})
+
+const paginatedRows = computed(() => {
+  return (props.rows || []).slice(startIndex.value, endIndex.value)
+})
+
+const startRow = computed(() => {
+  if (!totalRows.value) return 0
+  return startIndex.value + 1
+})
+
+const endRow = computed(() => {
+  if (!totalRows.value) return 0
+  return Math.min(endIndex.value, props.rows.length, totalRows.value)
+})
+
+function ensureRowsLoadedForPage(page) {
+  const needed = page * safePageSize.value
+  if ((props.rows?.length || 0) < needed && (props.rows?.length || 0) < totalRows.value) {
+    emit('loadMore')
+  }
+}
+
+function goNext() {
+  if (currentPage.value >= totalPages.value) return
+  const nextPage = currentPage.value + 1
+  ensureRowsLoadedForPage(nextPage)
+  currentPage.value = nextPage
+}
+
+function goPrev() {
+  if (currentPage.value <= 1) return
+  currentPage.value -= 1
+}
+
+function handlePageSizeChange() {
+  currentPage.value = 1
+  emit('updatePageCount', pageLengthCount.value)
+}
+watch(
+  () => props.rows?.length,
+  () => {
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => pageLengthCount.value,
+  () => {
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = 1
+    }
+  }
+)
 
 function getCurrentStatus(item) {
   if (!item) return ''
