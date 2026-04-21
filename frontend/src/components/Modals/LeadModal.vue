@@ -32,7 +32,7 @@
 
             <!-- first_name → Data, reqd -->
             <FieldWrap :label="__('First Name')" required>
-              <input v-model="lead.doc.first_name" type="text" class="fi" maxlength="140"
+              <input v-model.trim="lead.doc.first_name" type="text" class="fi" maxlength="50"
                 :class="{ 'border-red-400 bg-red-50': fieldError === 'first_name' }" />
             </FieldWrap>
 
@@ -848,6 +848,13 @@ async function createNewLead() {
           return error.value
         }
 
+        const invalidChars = [';', '<', '>', '{', '}', '[', ']']
+          if (invalidChars.some(ch => String(lead.doc.first_name || '').includes(ch))) {
+            fieldError.value = 'first_name'
+            error.value = __('First Name contains invalid characters')
+            return error.value
+          }
+
         if (!lead.doc.gender) {
           fieldError.value = 'gender'
           error.value = __('Gender is mandatory')
@@ -871,7 +878,7 @@ async function createNewLead() {
         }
 
         // Text max lengths
-        if (validateMax('first_name', 'First Name', 140)) return error.value
+        if (validateMax('first_name', 'First Name', 50)) return error.value
         if (validateMax('last_name', 'Last Name', 140)) return error.value
         if (validateMax('email', 'Email', 140)) return error.value
         if (validateMax('mobile_no', 'Mobile No', 20)) return error.value

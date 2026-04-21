@@ -97,6 +97,7 @@ class CRMLead(Document):
 		status: DF.Link
 		status_change_log: DF.Table[CRMStatusChangeLog]
 		territory: DF.Link | None
+		title: DF.Data | None
 		total: DF.Currency
 		website: DF.Data | None
 	# end: auto-generated types
@@ -107,14 +108,16 @@ class CRMLead(Document):
 	def validate(self):
 		self.set_full_name()
 		self.set_lead_name()
+		self.validate_name_length()
 		self.set_title()
 		self.validate_email()
+
 		if not self.is_new() and self.has_value_changed("lead_owner") and self.lead_owner:
 			self.share_with_agent(self.lead_owner)
 			self.assign_agent(self.lead_owner)
+
 		if self.has_value_changed("status"):
 			add_status_change_log(self)
-			
 
 	def after_insert(self):
 		if self.lead_owner:
@@ -122,6 +125,79 @@ class CRMLead(Document):
 
 	def before_save(self):
 		self.apply_sla()
+
+	def on_update(self):
+		self.log_activity_field_changes()
+
+	def log_activity_field_changes(self):
+		old_doc = self.get_doc_before_save()
+		if not old_doc:
+			return
+
+		tracked_fields = {
+			# Information & Activity
+			"status": "Status",
+			"source": "Source",
+			"industry": "Industry",
+
+			# Property Preference
+			"property_city": "City",
+			"property_region": "Region",
+			"property_type": "Property Type",
+			"property_subtype": "Property Subtype",
+			"property_relation": "Property Relation",
+			"property_bedrooms": "Bedrooms",
+			"property_bathrooms": "Bathrooms",
+			"property_space": "Space",
+			"property_min_price": "Min Budget",
+			"property_max_price": "Max Budget",
+			"property_payment": "Payment Method",
+			"property_ownership": "Ownership",
+			"property_condition": "Condition",
+			"property_decoration": "Decoration",
+			"property_down_payment": "Down Payment",
+			"property_features": "Features",
+			"property_finishing": "Finishing",
+			"property_floor": "Floor",
+			"property_project": "Preferred Project",
+			"property_view": "View",
+			"property_year_built": "Year Built",
+			"property_delivery_date": "Delivery Date",
+
+			# linked preference fields (if your custom UI writes these)
+			"project": "Project",
+			"project_unit": "Project Unit",
+			"single_unit": "Single Unit",
+		}
+
+		def normalize(v):
+			if v in (None, ""):
+				return "Empty"
+			if isinstance(v, (list, tuple, set)):
+				return ", ".join(map(str, v)) if v else "Empty"
+			return str(v)
+
+		changes = []
+
+		for fieldname, label in tracked_fields.items():
+			old_val = normalize(old_doc.get(fieldname))
+			new_val = normalize(self.get(fieldname))
+
+			if old_val != new_val:
+				changes.append(f"<b>{label}</b>: {old_val} → {new_val}")
+
+		if not changes:
+			return
+
+		full_name = frappe.utils.get_fullname(frappe.session.user)
+
+		self.add_comment(
+			"Info",
+			text=(
+				f"<b>{full_name}</b> updated lead details:<br>"
+				+ "<br>".join(changes)
+			),
+		)
 
 	def set_full_name(self):
 		if self.first_name:
@@ -162,6 +238,26 @@ class CRMLead(Document):
 
 			if self.is_new() or not self.image:
 				self.image = has_gravatar(self.email)
+
+	def validate_name_length(self):
+		max_length = 50
+
+		if self.first_name:
+			invalid_chars = [";", "<", ">", "{", "}", "[", "]"]
+			if any(ch in self.first_name for ch in invalid_chars):
+				frappe.throw(_("First Name contains invalid characters"))
+
+		# Validate the actual user-entered first name
+		if self.first_name and len(self.first_name.strip()) > max_length:
+			frappe.throw(_("First Name cannot exceed {0} characters").format(max_length))
+
+		# Optional: validate organization too if lead can be company-based
+		if self.organization and len(self.organization.strip()) > max_length:
+			frappe.throw(_("Organization cannot exceed {0} characters").format(max_length))
+
+		# Validate final generated lead_name as a safety net
+		if self.lead_name and len(self.lead_name.strip()) > max_length:
+			frappe.throw(_("Name cannot exceed {0} characters").format(max_length))
 
 	def assign_agent(self, agent):
 		if not agent:
@@ -394,6 +490,7 @@ class CRMLead(Document):
 			self.first_responded_on = None
 			self.first_response_time = None
 			return
+
 		self.sla = sla.name
 
 	def apply_sla(self):
@@ -402,6 +499,7 @@ class CRMLead(Document):
 		"""
 		if not self.sla:
 			return
+
 		sla = frappe.get_last_doc("CRM Service Level Agreement", {"name": self.sla})
 		if sla:
 			sla.apply(self)
@@ -460,6 +558,7 @@ class CRMLead(Document):
 				"width": "8rem",
 			},
 		]
+
 		rows = [
 			"name",
 			"lead_name",
@@ -478,6 +577,7 @@ class CRMLead(Document):
 			"_assign",
 			"image",
 		]
+
 		return {"columns": columns, "rows": rows}
 
 	@staticmethod
@@ -497,14 +597,17 @@ def convert_to_deal(lead, doc=None, deal=None, existing_contact=None, existing_o
 		frappe.throw(_("Not allowed to convert Lead to Deal"), frappe.PermissionError)
 
 	lead = frappe.get_cached_doc("CRM Lead", lead)
+
 	if frappe.db.exists("CRM Lead Status", "Qualified"):
 		lead.db_set("status", "Qualified")
+
 	lead.db_set("converted", 1)
+
 	if lead.sla and frappe.db.exists("CRM Communication Status", "Replied"):
 		lead.db_set("communication_status", "Replied")
+
 	contact = lead.create_contact(existing_contact, False)
 	organization = lead.create_organization(existing_organization)
 	_deal = lead.create_deal(contact, organization, deal)
+
 	return _deal
-
-

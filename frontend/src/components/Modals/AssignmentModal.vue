@@ -2,7 +2,7 @@
   <Dialog
     v-model="show"
     :options="{ title: __('Assign To'), size: 'xl' }"
-    @close="() => (assignees = [...oldAssignees])"
+    @close="cancelModal"
   >
     <template #body-content>
       <Link
@@ -67,12 +67,7 @@
           <Button
             variant="subtle"
             :label="__('Cancel')"
-            @click="
-              () => {
-                assignees = [...oldAssignees]
-                show = false
-              }
-            "
+            @close="cancelModal"
           />
           <Button
             variant="solid"
@@ -142,52 +137,79 @@ const addValue = (value) => {
   }
 }
 
+function resetAssignees() {
+  assignees.value = JSON.parse(JSON.stringify(oldAssignees.value || []))
+}
+
+function cancelModal() {
+  resetAssignees()
+  show.value = false
+}
+
 async function updateAssignees() {
-  const removedAssignees = oldAssignees.value
+  const currentAssignees = Array.isArray(assignees.value) ? assignees.value : []
+  const originalAssignees = Array.isArray(oldAssignees.value) ? oldAssignees.value : []
+
+  const removedAssignees = originalAssignees
     .filter(
-      (assignee) => !assignees.value.find((a) => a.name === assignee.name),
+      (assignee) => !currentAssignees.some((a) => a?.name === assignee?.name),
     )
     .map((assignee) => assignee.name)
+    .filter(Boolean)
 
-  const addedAssignees = assignees.value
+  const addedAssignees = currentAssignees
     .filter(
-      (assignee) => !oldAssignees.value.find((a) => a.name === assignee.name),
+      (assignee) => !originalAssignees.some((a) => a?.name === assignee?.name),
     )
     .map((assignee) => assignee.name)
+    .filter(Boolean)
 
+  // BULK REMOVE: remove from all selected docs, not just props.doc.name
   if (removedAssignees.length) {
-    await call('crm.api.doc.remove_assignments', {
-      doctype: props.doctype,
-      name: props.doc.name,
-      assignees: JSON.stringify(removedAssignees),
-    })
+    if (props.docs.size) {
+      for (const docname of Array.from(props.docs)) {
+        await call('crm.api.doc.remove_assignments', {
+          doctype: props.doctype,
+          name: docname,
+          assignees: JSON.stringify(removedAssignees),
+        })
+      }
+      emit('reload')
+    } else {
+      await call('crm.api.doc.remove_assignments', {
+        doctype: props.doctype,
+        name: props.doc.name,
+        assignees: JSON.stringify(removedAssignees),
+      })
+    }
   }
 
+  // BULK ADD (existing logic)
   if (addedAssignees.length) {
     if (props.docs.size) {
       capture('bulk_assign_to', { doctype: props.doctype })
-      call('frappe.desk.form.assign_to.add_multiple', {
+      await call('frappe.desk.form.assign_to.add_multiple', {
         doctype: props.doctype,
         name: JSON.stringify(Array.from(props.docs)),
         assign_to: addedAssignees,
         bulk_assign: true,
         re_assign: true,
-      }).then(() => {
-        emit('reload')
       })
+      emit('reload')
     } else {
       capture('assign_to', { doctype: props.doctype })
-      call('frappe.desk.form.assign_to.add', {
+      await call('frappe.desk.form.assign_to.add', {
         doctype: props.doctype,
         name: props.doc.name,
         assign_to: addedAssignees,
       })
     }
   }
+
   show.value = false
 }
 
 onMounted(() => {
-  oldAssignees.value = [...assignees.value]
+  oldAssignees.value = JSON.parse(JSON.stringify(assignees.value || []))
 })
 </script>

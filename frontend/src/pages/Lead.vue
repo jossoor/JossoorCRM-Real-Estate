@@ -139,13 +139,29 @@
           </div>
         </template>
 
-        <!-- ================= Information & Activity tab ================= -->
-        <template v-else-if="isInformationTab">
+        <!-- ================= Data tab ================= -->
+        <template v-else-if="isDataTab">
+          <LeadInformationAndFeedback
+            v-if="lead?.data?.name"
+            :leadData="lead.data"
+            :docState="document"
+            doctype="CRM Lead"
+            :docname="lead.data.name"
+            :showDataSection="true"
+            :showFeedbackSection="false"
+            @beforeSave="saveChanges"
+            @afterSave="reloadAssignees"
+          />
+        </template>
+        <!-- ================= Activities tab ================= -->
+        <template v-else-if="tabs[tabIndex]?.name === 'Activities'">
           <LeadInformationAndFeedback
             v-if="lead?.data?.name"
             :leadData="lead.data"
             doctype="CRM Lead"
             :docname="lead.data.name"
+            :showDataSection="false"
+            :showFeedbackSection="true"
             @beforeSave="saveChanges"
             @afterSave="reloadAssignees"
           />
@@ -156,7 +172,8 @@
             v-if="lead?.data?.name"
             :leadData="lead.data"
             :docname="lead.data.name"
-            :document="document"
+            :docState="document"
+            @dirty="markLeadDirty"
             @saved="() => lead.reload()"
           />
         </template>
@@ -263,7 +280,7 @@
 
       <SLASection v-if="lead.data.sla_status" v-model="lead.data" @updateField="updateField" />
 
-      <div v-if="sections.data" class="flex flex-1 flex-col justify-between">
+      <div v-if="sections.data && lead?.data?.name" class="flex flex-1 flex-col justify-between">
         <SidePanelLayout
           :sections="sections.data"
           doctype="CRM Lead"
@@ -519,7 +536,8 @@ const isSalesUserFlag = ref(null) // null = unknown while server call pending
 
 // base tabs (Activity injected later if allowed)
 const baseTabOptions = [
-  { name: 'Information & Activity', label: __('Information & Activity'), icon: DetailsIcon },
+  { name: 'Data', label: __('Data'), icon: DetailsIcon },
+  { name: 'Activities', label: __('Activities'), icon: ActivityIcon },
   { name: 'Property Preference', label: __('Property Preference'), icon: DetailsIcon },
   { name: 'Payment Plans', label: __('Payment Plans'), icon: DetailsIcon },
   { name: 'Tasks', label: __('Tasks'), icon: TaskIcon },
@@ -530,23 +548,12 @@ const baseTabOptions = [
 
 // tabs computed uses server flag to decide Activity visibility
 const tabs = computed(() => {
-  const t = baseTabOptions.slice()
-
-  // showActivity: only when we explicitly know user is NOT sales (false)
-  // initial null => hide (avoids flashing Activity before server responds)
-  const showActivity = (isSalesUserFlag.value === null) ? false : (!isSalesUserFlag.value)
-
-  if (showActivity) {
-    // insert Activity just before WhatsApp (index 6 keeps ordering after Attachments)
-    t.splice(6, 0, { name: 'Activity', label: __('Activity'), icon: ActivityIcon })
-  }
-
-  return t.filter((tab) => (tab.condition ? tab.condition() : true))
+  return baseTabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
 })
 
 const isPaymentsTab = computed(() => { try { return tabs.value?.[tabIndex.value]?.name === 'Payment Plans' } catch { return false } })
 // Check if we're in the Information & Activity tab
-const isInformationTab = computed(() => { try { return tabs.value?.[tabIndex.value]?.name === 'Information & Activity' } catch { return false } })
+const isDataTab = computed(() => { try { return tabs.value?.[tabIndex.value]?.name === 'Data' } catch { return false } })
 
 // --- hide Activity tab for Sales User on portal ---
 const isSalesUser = computed(() => {
@@ -606,15 +613,18 @@ watch(
 )
 
 function syncLeadToDocument(doc) {
-  if (document && document.doc) {
-    // Only update if it's the same record or if document is empty
-    if (!document.doc.name || document.doc.name === doc.name) {
-      Object.assign(document.doc, JSON.parse(JSON.stringify(doc)))
-      
-      // Update originalDoc to the latest server state to clear dirty state
-      document.originalDoc = JSON.parse(JSON.stringify(doc))
-      document.isDirty = false
-    }
+  if (!document || !doc) return
+
+  const cloned = JSON.parse(JSON.stringify(doc))
+
+  if (!document.doc || typeof document.doc !== 'object') {
+    document.doc = {}
+  }
+
+  if (!document.doc.name || document.doc.name === doc.name) {
+    Object.assign(document.doc, cloned)
+    document.originalDoc = JSON.parse(JSON.stringify(cloned))
+    document.isDirty = false
   }
 }
 
@@ -766,7 +776,7 @@ function openEmailBox() {
     return
   }
 
-  if (!['Emails', 'Comments', 'Activity'].includes(currentTab?.name)) {
+  if (!['Emails', 'Comments', 'Activity', 'Activities'].includes(currentTab?.name)) {
     activities.value.changeTabTo('emails')
   }
 
@@ -782,6 +792,20 @@ function openEmailBox() {
     }
   })
 }
+
+function markLeadDirty() {
+  try {
+    if (document?.doc) {
+      document.doc.__unsaved = 1
+    }
+    if (document) {
+      document.isDirty = true
+    }
+  } catch (e) {
+    console.warn('[Lead] markLeadDirty failed', e)
+  }
+}
+
 async function saveChanges(data) {
   try {
     await call('crm.api.doc.update_doc_fields', {

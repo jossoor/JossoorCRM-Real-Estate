@@ -1,17 +1,19 @@
 <template>
   <div class="flex flex-col">
     <!-- Information Section with DataFields -->
-    <div class="flex-shrink-0 px-3 sm:px-10">
+    <div v-if="props.showDataSection" class="flex-shrink-0 px-3 sm:px-10">
       <DataFields
-        :doctype="doctype"
-        :docname="docname"
+        v-if="props.docState?.doc"
+        :doctype="props.doctype"
+        :docname="props.docname"
+        :document="props.docState"
         @beforeSave="(data) => $emit('beforeSave', data)"
         @afterSave="(data) => $emit('afterSave', data)"
       />
     </div>
 
     <!-- Feedback Section -->
-    <div class="flex-1 border-t bg-white flex flex-col">
+    <div v-if="props.showFeedbackSection" class="flex-1 border-t bg-white flex flex-col">
       <div class="flex-1 px-3 sm:px-10 py-6">
         <!-- Header -->
         <div class="flex items-center gap-4 mb-6">
@@ -153,6 +155,18 @@ const props = defineProps({
   docname: {
     type: String,
     required: true,
+  },
+  showDataSection: {
+    type: Boolean,
+    default: true,
+  },
+  showFeedbackSection: {
+    type: Boolean,
+    default: true,
+  },
+  docState: {
+    type: Object,
+    default: null,
   },
 })
 

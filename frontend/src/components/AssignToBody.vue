@@ -143,7 +143,7 @@ watch(
   () => props.open,
   (val) => {
     if (val) {
-      oldAssignees.value = [...(assignees.value || [])]
+      oldAssignees.value = JSON.parse(JSON.stringify(assignees.value || []))
 
       assignToMe.value = assignees.value.some(
         (assignee) => assignee.name === getUser('').name,
