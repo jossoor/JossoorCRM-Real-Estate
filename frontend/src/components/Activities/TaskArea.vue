@@ -9,16 +9,22 @@
           <div class="font-medium text-ink-gray-9 truncate">
             {{ task.title }}
           </div>
+
           <div class="flex gap-1.5 text-ink-gray-8">
             <div class="flex items-center gap-1.5">
               <UserAvatar :user="task.assigned_to" size="xs" />
               {{ getUser(task.assigned_to).full_name }}
             </div>
-            <div v-if="task.due_date" class="flex items-center justify-center">
+
+            <!-- Always show separator before date -->
+            <div class="flex items-center justify-center">
               <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
             </div>
-            <div v-if="task.due_date">
+
+            <!-- Always show date block -->
+            <div>
               <Tooltip
+                v-if="task.due_date"
                 :text="formatDate(task.due_date, 'ddd, MMM D, YYYY | hh:mm a')"
               >
                 <div class="flex gap-2">
@@ -26,16 +32,24 @@
                   <div>{{ formatDate(task.due_date, 'D MMM, hh:mm a') }}</div>
                 </div>
               </Tooltip>
+
+              <div v-else class="flex gap-2 text-ink-gray-5">
+                <CalendarIcon />
+                <div>{{ __('No date') }}</div>
+              </div>
             </div>
+
             <div class="flex items-center justify-center">
               <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
             </div>
+
             <div class="flex gap-2">
               <TaskPriorityIcon class="!h-2 !w-2" :priority="task.priority" />
               {{ task.priority }}
             </div>
           </div>
         </div>
+
         <div class="flex items-center gap-1">
           <Dropdown
             :options="taskStatusOptions(modalRef.updateTaskStatus, task)"
@@ -49,6 +63,7 @@
               <TaskStatusIcon :status="task.status" />
             </Button>
           </Dropdown>
+
           <Dropdown
             :options="[
               {
@@ -83,6 +98,7 @@
           </Dropdown>
         </div>
       </div>
+
       <div
         v-if="i < tasks.length - 1"
         class="mx-2 h-px border-t border-outline-gray-modals"
@@ -90,6 +106,7 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
 import TaskStatusIcon from '@/components/Icons/TaskStatusIcon.vue'

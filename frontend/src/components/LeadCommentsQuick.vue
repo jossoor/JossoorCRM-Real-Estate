@@ -42,7 +42,7 @@
                 class="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm appearance-none outline-none focus:border-blue-500 text-gray-700"
                 required
               >
-                <option value="" disabled selected>{{ __('Activity Type') }}</option>
+                <option value="" disabled>{{ __('Activity Type') }}</option>
                 <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">
                   {{ opt.label }}
                 </option>

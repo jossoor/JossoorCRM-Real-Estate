@@ -151,7 +151,7 @@
             variant="solid"
             :label="editMode ? __('Update Task') : __('Save Task')"
             :loading="submitting"
-            :disabled="submitting"
+            :disabled="submitting || hasReminderConflict"
             class="w-full"
             @click="handleSubmit"
           />
@@ -214,6 +214,30 @@ const _task = ref({
 // ─── computed ─────────────────────────────────────────────────────────────────
 const showAttendees = computed(() => _task.value.task_type === 'team meeting')
 
+const hasReminderConflict = computed(() => {
+  if (!reminderAt.value) return false
+
+  const reminder = typeof reminderAt.value === 'string'
+    ? new Date(reminderAt.value)
+    : reminderAt.value
+
+  if (Number.isNaN(reminder?.getTime?.())) return false
+
+  if (reminder <= new Date()) return true
+
+  if (_task.value.due_date) {
+    const due = typeof _task.value.due_date === 'string'
+      ? new Date(_task.value.due_date)
+      : _task.value.due_date
+
+    if (!Number.isNaN(due?.getTime?.()) && reminder > due) {
+      return true
+    }
+  }
+
+  return false
+})
+
 const userOptions = computed(() => {
   const list = users?.data?.crmUsers
   if (!Array.isArray(list)) return []
@@ -266,13 +290,57 @@ function normalizeDatetime(val) {
   return typeof val === 'string' ? val : getFormat(val, 'YYYY-MM-DD HH:mm:ss')
 }
 
+function getDefaultReminderFromDueDate(val) {
+  if (!val) return null
+
+  const due = typeof val === 'string' ? new Date(val) : new Date(val)
+  if (Number.isNaN(due.getTime())) return null
+
+  const reminder = new Date(due)
+  reminder.setDate(reminder.getDate() - 1)
+
+  // fallback if somehow not before due date
+  if (reminder >= due) {
+    reminder.setTime(due.getTime() - 60 * 60 * 1000)
+  }
+
+  return reminder
+}
+
 function validateReminder() {
-  if (!reminderAt.value) return true
-  const d = typeof reminderAt.value === 'string' ? new Date(reminderAt.value) : reminderAt.value
-  if (d <= new Date()) {
+  if (!reminderAt.value) {
+    reminderError.value = ''
+    return true
+  }
+
+  const reminder = typeof reminderAt.value === 'string'
+    ? new Date(reminderAt.value)
+    : reminderAt.value
+
+  if (Number.isNaN(reminder?.getTime?.())) {
+    reminderError.value = ''
+    return true
+  }
+
+  if (reminder <= new Date()) {
     reminderError.value = __('Reminder must be a future date and time')
     return false
   }
+
+  if (_task.value.due_date) {
+    const due = typeof _task.value.due_date === 'string'
+      ? new Date(_task.value.due_date)
+      : _task.value.due_date
+
+    if (!Number.isNaN(due?.getTime?.()) && reminder > due) {
+      reminderError.value = __(
+        'Reminder must be set before the due date ({0}).',
+        [getFormat(_task.value.due_date, 'YYYY-MM-DD')]
+      )
+      return false
+    }
+  }
+
   reminderError.value = ''
   return true
 }
@@ -432,15 +500,24 @@ async function render() {
   try {
     if (!props.task?.name) {
       // CREATE mode — reset everything
-      reminderAt.value = null
       selectedUsers.value = []
-      _task.value = {
-        title: '', description: '', assigned_to: '', due_date: '',
-        status: 'Backlog', priority: 'Low',
-        reference_doctype: props.doctype,
-        reference_docname: props.doc || null,
-        task_type: '', meeting_attendees: [],
-      }
+      const defaultDueDate = new Date()
+        defaultDueDate.setDate(defaultDueDate.getDate() + 1)
+
+        _task.value = {
+          title: '',
+          description: '',
+          assigned_to: '',
+          due_date: defaultDueDate,
+          status: 'Backlog',
+          priority: 'Low',
+          reference_doctype: props.doctype,
+          reference_docname: props.doc || null,
+          task_type: '',
+          meeting_attendees: [],
+        }
+
+        reminderAt.value = getDefaultReminderFromDueDate(defaultDueDate)
     } else {
       // EDIT mode — load full doc
       const full = await call('frappe.client.get', { doctype: 'CRM Task', name: props.task.name })
@@ -463,6 +540,36 @@ async function render() {
 }
 
 // ─── watchers ─────────────────────────────────────────────────────────────────
+watch(
+  () => _task.value.due_date,
+  (newDueDate) => {
+    if (bootstrapping.value || !newDueDate) return
+
+    const reminder = reminderAt.value
+      ? (typeof reminderAt.value === 'string' ? new Date(reminderAt.value) : reminderAt.value)
+      : null
+
+    const due = typeof newDueDate === 'string' ? new Date(newDueDate) : newDueDate
+
+    const reminderInvalid =
+      !reminder ||
+      Number.isNaN(reminder?.getTime?.()) ||
+      reminder > due
+
+    if (reminderInvalid) {
+      reminderAt.value = getDefaultReminderFromDueDate(newDueDate)
+    }
+
+    validateReminder()
+  },
+  { immediate: false }
+)
+
+watch(reminderAt, () => {
+  if (bootstrapping.value) return
+  validateReminder()
+})
+
 watch(selectedUsers, (arr) => {
   if (bootstrapping.value) return
   _task.value.meeting_attendees = selectedToChild(arr || [])

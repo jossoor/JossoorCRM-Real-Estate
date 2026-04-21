@@ -25,8 +25,9 @@ const newType = ref('') // Default to empty for placeholder
 const editing = ref(null) // {name, content, subject, comment_type}
 import { FEEDBACK_TYPES } from '@/constants/feedbackTypes'
 
-const typeOptions = FEEDBACK_TYPES
-
+const typeOptions = Array.from(
+  new Map(FEEDBACK_TYPES.map(opt => [opt.value, opt])).values()
+)
 
 /** خيارات الريمايندر */
 const addReminder = ref(false)

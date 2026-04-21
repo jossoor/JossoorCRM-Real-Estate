@@ -85,9 +85,9 @@
                 <div :class="['h-2 w-2 rounded-full', statusDotClass]"></div>
                 <span class="max-w-[120px] truncate">{{ statusLabel }}</span>
                 <FeatherIcon
-                  v-if="!status"
-                  name="chevron-down"
-                  class="h-4 w-4 opacity-50 pointer-events-none"
+                  v-if="!projectValue"
+                  :name="open ? 'chevron-up' : 'chevron-down'"
+                  class="h-4 w-4 opacity-50"
                 />
               </button>
             </template>
@@ -119,7 +119,7 @@
                 <FeatherIcon
                   v-if="!projectValue"
                   name="chevron-down"
-                  class="h-4 w-4 opacity-50 pointer-events-none"
+                  class="h-4 w-4 opacity-50"
                 />
               </button>
             </template>
@@ -153,7 +153,7 @@
               <FeatherIcon
                 v-if="!(lastFrom || lastTo)"
                 name="chevron-down"
-                class="h-4 w-4 opacity-50 pointer-events-none"
+                class="h-4 w-4 opacity-50"
               />
             </button>
 

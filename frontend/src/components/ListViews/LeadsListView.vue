@@ -91,18 +91,21 @@
           </template>
 
           <template #default="{ label }">
-            <div v-if="column.key === 'lead_name'">
-              <RouterLink
-                class="font-medium text-gray-900 hover:text-blue-600 hover:underline transition-colors"
-                :to="{
-                  name: 'Lead',
-                  params: { leadId: row.name },
-                  query: { view: route.query.view, viewType: route.params.viewType },
-                }"
-                @click.stop
-              >
-                {{ item?.label || label }}
-              </RouterLink>
+            <div v-if="column.key === 'lead_name'" class="min-w-0">
+              <Tooltip :text="item?.label || label">
+                <RouterLink
+                  class="block truncate font-medium text-gray-900 hover:text-blue-600 hover:underline transition-colors"
+                  :title="item?.label || label"
+                  :to="{
+                    name: 'Lead',
+                    params: { leadId: row.name },
+                    query: { view: route.query.view, viewType: route.params.viewType },
+                  }"
+                  @click.stop
+                >
+                  {{ item?.label || label }}
+                </RouterLink>
+              </Tooltip>
             </div>
 
             <div
@@ -110,9 +113,14 @@
               class="flex items-center gap-1 min-w-0 w-full max-w-full overflow-hidden"
             >
               <div class="min-w-0 flex-1 overflow-hidden pr-1">
-                <span class="block text-gray-700 truncate">
-                  {{ typeof item === 'object' && item ? item.label : item }}
-                </span>
+                <Tooltip :text="typeof item === 'object' && item ? item.label : item">
+                  <span
+                    class="block text-gray-700 truncate"
+                    :title="typeof item === 'object' && item ? item.label : item"
+                  >
+                    {{ typeof item === 'object' && item ? item.label : item }}
+                  </span>
+                </Tooltip>
               </div>
 
               <div class="flex items-center gap-0.5 shrink-0 flex-none max-w-[78px] overflow-hidden">
@@ -271,13 +279,15 @@
               />
             </div>
 
-            <div
-              v-else
-              class="truncate text-sm text-gray-700 hover:text-gray-900 transition-colors"
-              @click="(event) => emit('applyFilter', { event, idx, column, item, firstColumn: columns[0] })"
-            >
-              {{ label }}
-            </div>
+            <Tooltip v-else :text="label">
+              <div
+                class="truncate text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                :title="label"
+                @click="(event) => emit('applyFilter', { event, idx, column, item, firstColumn: columns[0] })"
+              >
+                {{ label }}
+              </div>
+            </Tooltip>
           </template>
         </ListRowItem>
       </div>
