@@ -21,6 +21,7 @@
             {{ __('Activity') }}
           </h2>
           <button
+            v-if="!hasActivity"
             @click="showFeedbackModal = true"
             class="px-3 py-1.5 bg-[#1a1c2e] text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors flex items-center gap-1"
           >
@@ -67,7 +68,7 @@
           <div
             v-for="activity in filteredActivities"
             :key="activity.name"
-            class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm"
+            class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm overflow-hidden"
           >
             <!-- Header: Icon + Type/Title -->
             <div class="flex items-start gap-3 mb-3">
@@ -95,8 +96,8 @@
             </div>
             
             <!-- Activity Content Box -->
-            <div class="bg-[#f3f4f6] rounded-lg p-4 text-[15px] text-gray-700 leading-snug whitespace-pre-wrap flex flex-col gap-3">
-              <div>{{ cleanContent(activity.content || '') }}</div>
+            <div class="bg-[#f3f4f6] rounded-lg p-4 text-[15px] text-gray-700 leading-snug whitespace-pre-wrap break-words overflow-hidden flex flex-col gap-3">
+              <div class="break-all overflow-wrap-anywhere">{{ cleanContent(activity.content || '') }}</div>
               
               <!-- Reminder / Next Follow-up (More prominent) -->
               <div v-if="getReminderForActivity(activity)" class="mt-1 pt-3 border-t border-gray-200">
@@ -178,6 +179,7 @@ const reminders = ref([])
 const searchQuery = ref('')
 const selectedType = ref('All')
 const showFeedbackModal = ref(false)
+const hasActivity = computed(() => activities.value.length > 0)
 
 
 const activityTypeOptions = [

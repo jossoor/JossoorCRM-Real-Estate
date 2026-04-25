@@ -59,7 +59,7 @@
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import DataFieldsModal from '@/components/Modals/DataFieldsModal.vue'
 import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
-import { Badge, createResource } from 'frappe-ui'
+import { Badge, createResource, toast } from 'frappe-ui'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import { usersStore } from '@/stores/users'
 import { useDocument } from '@/data/document'
@@ -97,6 +97,12 @@ const tabs = createResource({
 
 function saveChanges() {
   if (!document.isDirty) return
+
+  const firstName = (document.doc?.first_name || '').trim()
+  if (!firstName) {
+    toast.error(__('First Name is required'))
+    return
+  }
 
   const updatedDoc = { ...document.doc }
   const oldDoc = { ...document.originalDoc }

@@ -83,7 +83,7 @@
               :getOptionValue="(o) => o?.value || ''"
               :debounce="250"
               :disabled="lockUnitProject"
-              @search="onProjectSearch"
+              @update:query="onProjectSearch"
               @change="onProjectPicked"
               @update:modelValue="onProjectPicked"
               @focus="loadProjectRecents"
@@ -109,7 +109,7 @@
               :debounce="250"
               :disabled="lockUnitProject"
               :placeholder="projectId ? __('Search Project Units…') : __('Search Units…')"
-              @search="onUnitSearch"
+              @update:query="onUnitSearch"
               @change="onUnitPicked"
               @update:modelValue="onUnitPicked"
               @focus="loadUnitRecents"
@@ -679,7 +679,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Button, FormControl, FeatherIcon, call } from 'frappe-ui'
+import { Button, FormControl, FeatherIcon, call, toast } from 'frappe-ui'
 import Card from '@/components/Card.vue'
 
 /** ==== Doctype names ==== */
@@ -813,7 +813,7 @@ async function findProjects(q = '') {
 }
 
 async function onProjectSearch(val) {
-  const q = typeof val === 'string' ? val : ''
+  const q = String(val || '').trim()
   await findProjects(q)
 }
 async function loadProjectRecents() {
@@ -1054,6 +1054,36 @@ const inUnitContext = computed(() =>
 )
 const inLeadContext = computed(() => ctxDoctype.value === 'CRM Lead' && !!ctxDocName.value)
 
+watch(
+  inLeadContext,
+  async (val) => {
+    if (val && ctxDocName.value) {
+      leadId.value = ctxDocName.value
+
+      let label = ctxDocName.value
+
+      try {
+        const leadDoc = await call('frappe.client.get', {
+          doctype: 'CRM Lead',
+          name: ctxDocName.value,
+        })
+
+        const doc = leadDoc?.message || leadDoc || {}
+        label =
+          [doc.first_name, doc.last_name].filter(Boolean).join(' ')
+          || doc.full_name
+          || doc.lead_name
+          || doc.name
+          || ctxDocName.value
+      } catch {}
+
+      leadLabel.value = label
+      leadModel.value = { value: ctxDocName.value, label }
+    }
+  },
+  { immediate: true }
+)
+
 /* -------- OPTIONS -------- */
 const modeOptions = [
   { label: 'Percent of Total', value: 'percent' },
@@ -1290,7 +1320,7 @@ async function searchUnits(q = '') {
 
 /* small helpers for unit AC */
 async function onUnitSearch(val) {
-  const q = typeof val === 'string' ? val : ''
+  const q = String(val || '').trim()
   await searchUnits(q)
 }
 async function loadUnitRecents() {
@@ -1797,6 +1827,7 @@ async function loadExistingPlan(name) {
 
 /* react to route/prop changes */
 onMounted(async () => {
+  toast.clear?.()
   if (inLeadContext.value) {
     const val = ctxDocName.value || ''
     leadId.value = val
@@ -1915,7 +1946,7 @@ async function savePlan() {
   saveMsg.value = ''
   if (!planRows.value.length) { saveMsg.value = __('Nothing to save (empty schedule).'); return }
   if (!String(planName.value || '').trim()) { saveMsg.value = __('Plan Name is required.'); return }
-
+  
   const id = currentPlanName.value || routePlanName.value
   const { id: unitIdToSave, label: unitLabelToSave } = resolveUnitFromModel()
   const projectNameToSave = projectLabel.value || projectId.value || ''
@@ -1974,13 +2005,20 @@ async function savePlan() {
     amount: Number(r.amount || 0),
   }))
 
+  if ((planName.value || '').trim().length > 140) {
+    errorMsg.value = __('Plan Name must not exceed 140 characters')
+    saveMsg.value = ''
+    return
+  }
+  
+
   try {
     if (!id) {
       const insertDoc = {
         doctype: props.planDoctype,
         link_doctype: ctxDoctype.value || (selectedUnitDoctype.value || ''),
         link_name:    ctxDocName.value || (unitIdToSave || ''),
-        lead:         leadId.value || (inLeadContext.value ? ctxDocName.value : ''),
+        lead:         inLeadContext.value ? ctxDocName.value : leadId.value,
 
         project_name: projectNameToSave,
         unit_name:    unitNameToSave,
@@ -2023,9 +2061,10 @@ async function savePlan() {
     const saved = saveRes?.message ?? saveRes
     currentPlanName.value = saved?.name || id
     saveMsg.value = __('Updated.')
-  } catch (e) {
-    const msg = e?.messages?.[0] || e?.message || String(e)
-    if (/TimestampMismatch|Document has been modified|CannotChangeConstant/i.test(msg)) {
+    } catch (e) {
+    const raw = e?.messages?.[0] || e?.message || e?.exc || String(e)
+
+    if (/TimestampMismatch|Document has been modified|CannotChangeConstant/i.test(raw)) {
       try {
         const freshRes = await call('frappe.client.get', { doctype: props.planDoctype, name: id })
         const fresh = freshRes?.message ?? freshRes
@@ -2052,11 +2091,24 @@ async function savePlan() {
         saveMsg.value = __('Updated.')
         return
       } catch (e2) {
-        saveMsg.value = e2?.messages?.[0] || e2?.message || String(e2)
+        const retryRaw = e2?.messages?.[0] || e2?.message || e2?.exc || String(e2)
+
+        if (String(retryRaw).includes('max characters allowed is 140')) {
+          errorMsg.value = __('Plan Name must not exceed 140 characters')
+          saveMsg.value = ''
+        } else {
+          saveMsg.value = String(retryRaw).replace(/<[^>]*>/g, '')
+        }
         return
       }
     }
-    saveMsg.value = msg
+
+    if (String(raw).includes('max characters allowed is 140')) {
+      errorMsg.value = __('Plan Name must not exceed 140 characters')
+      saveMsg.value = ''
+    } else {
+      saveMsg.value = String(raw).replace(/<[^>]*>/g, '')
+    }
   }
 }
 
