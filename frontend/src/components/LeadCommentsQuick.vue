@@ -275,6 +275,25 @@ async function addComment() {
 
   try {
 
+    const existing = await call('frappe.client.get_list', {
+      doctype: 'Comment',
+      fields: ['name'],
+      filters: [
+        ['Comment', 'reference_doctype', '=', 'CRM Lead'],
+        ['Comment', 'reference_name', '=', props.leadName],
+        ['Comment', 'comment_type', '=', 'Comment']
+      ],
+      limit_page_length: 1,
+    })
+
+    const existingComments = Array.isArray(existing?.message)
+      ? existing.message
+      : (Array.isArray(existing) ? existing : [])
+
+    if (existingComments.length > 0) {
+      toast.error(__('Activity already exists for this lead'))
+      return
+    }
     // ✅ SAME METHOD USED INTERNALLY BY FRAPPE
     const res = await call('frappe.client.insert', {
       doc: {

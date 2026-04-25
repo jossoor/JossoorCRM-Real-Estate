@@ -1127,14 +1127,19 @@ def delete_bulk_docs(doctype, items, delete_linked=False):
 
 @frappe.whitelist()
 def update_doc_fields(doctype, name, fieldname):
-	if isinstance(fieldname, str):
-		fieldname = json.loads(fieldname)
+    if isinstance(fieldname, str):
+        fieldname = json.loads(fieldname)
 
-	doc = frappe.get_doc(doctype, name)
-	doc.check_permission("write")
+    doc = frappe.get_doc(doctype, name)
+    doc.check_permission("write")
 
-	# Update fields using db_set to bypass mandatory checks for unrelated fields
-	for key, value in fieldname.items():
-		doc.db_set(key, value)
+    if doctype == "CRM Lead" and "first_name" in fieldname:
+        first_name = (fieldname.get("first_name") or "").strip()
+        if not first_name:
+            frappe.throw(_("First Name is required"))
 
-	return doc.as_dict()
+    # Update fields using db_set to bypass mandatory checks for unrelated fields
+    for key, value in fieldname.items():
+        doc.db_set(key, value)
+
+    return doc.as_dict()
