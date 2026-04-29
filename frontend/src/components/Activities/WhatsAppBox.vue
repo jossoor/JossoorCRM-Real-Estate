@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div
     v-if="reply?.message"
@@ -9,11 +10,16 @@
     >
       <div
         class="mb-1 text-sm font-bold"
-        :class="reply.type == 'Incoming' ? 'text-ink-green-2' : 'text-ink-blue-link'"
+        :class="
+          reply.type == 'Incoming' ? 'text-ink-green-2' : 'text-ink-blue-link'
+        "
       >
         {{ reply.from_name || __('You') }}
       </div>
-      <div class="max-h-12 overflow-hidden" v-html="reply.message" />
+      <div
+        class="max-h-12 overflow-hidden"
+        v-html="sanitizeHTML(reply.message)"
+      />
     </div>
 
     <Button variant="ghost" icon="x" @click="reply = {}" />
@@ -21,7 +27,7 @@
   <div class="flex items-end gap-2 px-3 py-2.5 sm:px-10" v-bind="$attrs">
     <div class="flex h-8 items-center gap-2">
       <FileUploader @success="(file) => uploadFile(file)">
-        <template v-slot="{ openFileSelector }">
+        <template #default="{ openFileSelector }">
           <div class="flex items-center space-x-2">
             <Dropdown :options="uploadOptions(openFileSelector)">
               <FeatherIcon
@@ -33,8 +39,8 @@
         </template>
       </FileUploader>
       <IconPicker
-        v-model="emoji"
         v-slot="{ togglePopover }"
+        v-model="emoji"
         @update:modelValue="
           () => {
             content += emoji
@@ -44,17 +50,17 @@
         "
       >
         <SmileIcon
-          @click="togglePopover"
           class="flex size-4.5 cursor-pointer rounded-sm text-xl leading-none text-ink-gray-4"
+          @click="togglePopover"
         />
       </IconPicker>
     </div>
     <Textarea
       ref="textareaRef"
+      v-model="content"
       type="textarea"
       class="min-h-8 w-full"
       :rows="rows"
-      v-model="content"
       :placeholder="placeholder"
       @focus="rows = 6"
       @blur="rows = 1"
@@ -66,17 +72,25 @@
 <script setup>
 import IconPicker from '@/components/IconPicker.vue'
 import SmileIcon from '@/components/Icons/SmileIcon.vue'
-import { capture } from '@/telemetry'
-import { createResource, Textarea, FileUploader, Dropdown } from 'frappe-ui'
+import { sanitizeHTML } from '@/utils'
+import {
+  createResource,
+  Textarea,
+  FileUploader,
+  Dropdown,
+  toast,
+} from 'frappe-ui'
 import { ref, nextTick, watch } from 'vue'
 
 const props = defineProps({
-  doctype: String,
+  doctype: { type: String, default: '' },
 })
 
-const doc = defineModel()
-const whatsapp = defineModel('whatsapp')
-const reply = defineModel('reply')
+const doc = defineModel({ type: Object, default: () => ({}) })
+const whatsapp = defineModel('whatsapp', { type: Object, default: () => ({}) })
+const reply = defineModel('reply', { type: Object, default: () => ({}) })
+
+
 const rows = ref(1)
 const textareaRef = ref(null)
 const emoji = ref('')
@@ -123,6 +137,10 @@ async function sendWhatsAppMessage() {
     url: 'crm.api.whatsapp.create_whatsapp_message',
     params: args,
     auto: true,
+    onSuccess: () => whatsapp.value.reload(),
+    onError: (error) => {
+      toast.error(error.messages?.[0] || __('Failed to send WhatsApp message'))
+    },
   })
 }
 
