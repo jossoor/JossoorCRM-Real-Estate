@@ -714,3 +714,10 @@ export function orderSensitiveEqual(a, b) {
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
   return true
 }
+
+export function sanitizeHTML(html) {
+  if (!html) return ''
+  const div = document.createElement('div')
+  div.innerHTML = html
+  return div.textContent || div.innerText || ''
+}
