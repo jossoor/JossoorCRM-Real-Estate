@@ -251,6 +251,16 @@ const crmUserNames = computed(() => {
 })
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
+
+function toMysqlDatetime(val) {
+  if (!val) return null
+  const d = typeof val === 'string' ? new Date(val) : val
+  if (Number.isNaN(d?.getTime?.())) return null
+  // "YYYY-MM-DD HH:mm:ss" in local time
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+         `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 const typeLabel = (v) => ({ call: __('Call'), 'team meeting': __('Meeting'), 'property showing': __('Property Showing') }[v] || v)
 
 function taskTypeOptions(cb) {
@@ -287,7 +297,7 @@ function redirect() {
 
 function normalizeDatetime(val) {
   if (!val) return null
-  return typeof val === 'string' ? val : getFormat(val, 'YYYY-MM-DD HH:mm:ss')
+  return toMysqlDatetime(val)  // handles both Date objects and ISO strings
 }
 
 function getDefaultReminderFromDueDate(val) {
@@ -418,7 +428,7 @@ async function doSave() {
       const doc = await call('frappe.client.get', { doctype: 'CRM Task', name: _task.value.name })
       Object.assign(doc, {
         title: _task.value.title, description: _task.value.description,
-        assigned_to: _task.value.assigned_to, due_date: _task.value.due_date,
+        assigned_to: _task.value.assigned_to, due_date:  toMysqlDatetime(_task.value.due_date),
         status: _task.value.status, priority: _task.value.priority,
         task_type: _task.value.task_type || null,
         meeting_attendees: selectedToChild(selectedUsers.value),
@@ -432,7 +442,7 @@ async function doSave() {
         doctype: 'CRM Task', name: _task.value.name,
         fieldname: {
           title: _task.value.title, description: _task.value.description,
-          assigned_to: _task.value.assigned_to, due_date: _task.value.due_date,
+          assigned_to: _task.value.assigned_to, due_date:  toMysqlDatetime(_task.value.due_date),
           status: _task.value.status, priority: _task.value.priority,
           task_type: _task.value.task_type || null,
         },
@@ -456,7 +466,7 @@ async function doSave() {
         title: _task.value.title,
         description: _task.value.description,
         assigned_to: _task.value.assigned_to,
-        due_date: _task.value.due_date,
+        due_date:  toMysqlDatetime(_task.value.due_date),
         status: _task.value.status,
         priority: _task.value.priority,
         task_type: _task.value.task_type || null,
@@ -508,7 +518,7 @@ async function render() {
           title: '',
           description: '',
           assigned_to: '',
-          due_date: defaultDueDate,
+          due_date: toMysqlDatetime(defaultDueDate),
           status: 'Backlog',
           priority: 'Low',
           reference_doctype: props.doctype,

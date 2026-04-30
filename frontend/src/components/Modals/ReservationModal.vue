@@ -24,7 +24,7 @@
             <div class="relative">
               <Input
                 v-model="leadInput"
-                :disabled="isEdit"
+               :disabled="isEdit || !!props.seedLeadId"
                 :placeholder="__('Type to search Leads…')"
                 @focus="() => { if (!isEdit) { openDropdown('lead'); runLeadSearch(); } }"
                 @update:modelValue="onLeadInput"
@@ -33,7 +33,7 @@
                 {{ __('Lead is locked in edit mode to keep payment-plan linkage consistent.') }}
               </p>
               <button
-                v-if="!isEdit && links.leadId"
+                v-if="!isEdit && !props.seedLeadId && links.leadId"
                 class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 @click="clearLead"
                 aria-label="Clear Lead"
@@ -369,6 +369,8 @@ const ppLoading  = ref(false)
 const ppSearched = ref(false)
 
 /* helpers */
+
+
 function debounce(fn, ms){ let t=null; return (...a)=>{ if(t) clearTimeout(t); t=setTimeout(()=>fn(...a), ms) } }
 const todayISO = () => new Date().toISOString().slice(0,10)
 
@@ -419,40 +421,65 @@ function clearLead(){
   leadOptions.value = []
 }
 
+
+
+async function seedLeadFromProp() {
+  console.log('[SEED] running, id=', props.seedLeadId, 'label=', props.seedLeadLabel)
+  if (!props.seedLeadId) return
+
+  let label = props.seedLeadLabel || ''
+
+  if (!label) {
+    try {
+      const res = await call('frappe.client.get', {
+        doctype: LEAD_DTX.value,
+        name: props.seedLeadId,
+        fields: ['name', 'lead_name'],
+      })
+      const doc = res?.message || res
+      label = doc?.lead_name || doc?.name || props.seedLeadId
+      console.log('[SEED] fetched label from server:', label)
+    } catch (e) {
+      console.warn('[SEED] could not fetch lead label', e)
+      label = props.seedLeadId
+    }
+  }
+
+  console.log('[SEED] calling pickLead with', { value: props.seedLeadId, label })
+  await pickLead({ value: props.seedLeadId, label })
+}
 watch(() => props.modelValue, async (open) => {
-  if(!open) return
-  errorMsg.value=''; saving.value=false; openDropdown(null)
+   console.log('🔴 WATCHER FIRED, open=', open, 'seedLeadId=', props.seedLeadId)
+  if (!open) return
+  errorMsg.value = ''; saving.value = false; openDropdown(null)
 
   await detectLeadDoctype()
   await resolveReservationFields()
 
-  if (isEdit.value && (props.initial?.name)) {
+  if (isEdit.value && props.initial?.name) {
     await hydrateFromServer(props.initial.name)
   } else {
-    const blank={ doctype: RESERVATION_DT, name:'' }
-    Object.values(RF.value).forEach(k=>{
-      blank[k]=(k===RF.value.frequency?'Monthly':'')
+    const blank = { doctype: RESERVATION_DT, name: '' }
+    Object.values(RF.value).forEach(k => {
+      blank[k] = (k === RF.value.frequency ? 'Monthly' : '')
     })
-    form.value=blank
-    form.value[RF.value.reservation_date]=todayISO()
-    form.value[RF.value.status]=form.value[RF.value.status]||'Reserved'
+    form.value = blank
+    form.value[RF.value.reservation_date] = todayISO()
+    form.value[RF.value.status] = form.value[RF.value.status] || 'Reserved'
 
-    links.value={
-      leadId:'', projectId:'', paymentPlanId:'', unitId:'', unitIsProjectUnit:false
-    }
+    links.value = { leadId: '', projectId: '', paymentPlanId: '', unitId: '', unitIsProjectUnit: false }
     leadPickedLabel.value = projectPickedLabel.value = unitPickedLabel.value = ppPickedLabel.value = ''
     leadInput.value = projectInput.value = unitInput.value = ppInput.value = ''
-    unitMetaPreview.value=null
-  }
+    unitMetaPreview.value = null
 
-  console.log('[RsvModal] OPEN modal state ->', {
-    LEAD_DTX: LEAD_DTX.value,
-    PAYMENT_PLAN_DT,
-    PLAN_LEAD_FIELD,
-    RF: JSON.parse(JSON.stringify(RF.value)),
-    form: JSON.parse(JSON.stringify(form.value)),
-    links: JSON.parse(JSON.stringify(links.value)),
-  })
+    // Seed lead from prop
+    console.log('[SEED] about to call seedLeadFromProp, seedLeadId=', props.seedLeadId)
+    if (props.seedLeadId) {
+      await seedLeadFromProp()
+    } else {
+      console.warn('[SEED] seedLeadId is empty!')
+    }
+  }
 })
 
 function closeAll(){ openDropdown(null); modelValue.value=false }

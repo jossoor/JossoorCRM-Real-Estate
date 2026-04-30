@@ -312,9 +312,11 @@
     v-model="showReserveModal"
     mode="create"
     :seedLeadId="lead.data.name"
-    :seedLeadLabel="title"
+:seedLeadLabel="lead.data.lead_name || lead.data.name"
+
     @created="(r) => { toast.success(__('Reservation created')); router.push({ name: 'Reservations', query: { name: r?.name } }) }"
   />
+  
 
 </template>
 
