@@ -44,16 +44,149 @@
       class="flex flex-1 overflow-hidden flex-col [&_[role='tab']]:px-0 [&_[role='tablist']]:px-5 [&_[role='tablist']]:gap-7.5 [&_[role='tabpanel']:not([hidden])]:flex [&_[role='tabpanel']:not([hidden])]:grow"
     >
       <template #tab-panel>
-        <Activities
-          ref="activities"
-          doctype="CRM Deal"
-          :docname="dealId"
-          :tabs="tabs"
-          v-model:reload="reload"
-          v-model:tabIndex="tabIndex"
-          @beforeSave="beforeStatusChange"
-          @afterSave="reloadAssignees"
-        />
+
+        <!-- Payment Plans -->
+        <template v-if="isPaymentsTab">
+          <div class="p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="text-lg font-semibold">
+                {{ __('Payment Plans') }}
+                <span v-if="hydratedPlans.length" class="text-sm opacity-60">({{ hydratedPlans.length }})</span>
+              </div>
+            </div>
+
+            <div class="overflow-auto border rounded-lg">
+              <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th class="px-4 py-2 text-left">{{ __('Plan Name') }}</th>
+                    <th class="px-4 py-2 text-right">{{ __('Total Amount') }}</th>
+                    <th class="px-4 py-2 text-left">{{ __('Modified') }}</th>
+                    <th class="px-4 py-2 text-left">{{ __('Owner') }}</th>
+                    <th class="px-4 py-2 text-center">{{ __('Actions') }}</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr v-if="!paymentPlans.loading && !hydratedPlans.length">
+                    <td colspan="5" class="px-4 py-6 text-center text-gray-500">
+                      {{ __('No payment plans yet.') }}
+                    </td>
+                  </tr>
+
+                  <tr v-else-if="paymentPlans.loading">
+                    <td colspan="5" class="px-4 py-6 text-sm text-gray-500">
+                      {{ __('Loading…') }}
+                    </td>
+                  </tr>
+
+                  <tr
+                    v-for="p in hydratedPlans"
+                    :key="p.name"
+                    class="border-t hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors"
+                  >
+                    <!-- PLAN NAME (strictly from plan_name/title; never show id unless both missing) -->
+                    <td class="px-4 py-2">
+                      <div class="font-medium truncate" :title="displayPlanName(p)">
+                        <button class="underline-offset-2 hover:underline" @click="openPaymentPlan(p.name)">
+                          {{ displayPlanName(p) }}
+                        </button>
+                      </div>
+                      <!-- If you do NOT want to show the internal id at all, remove the block below -->
+                      <div class="text-xs text-gray-500 flex items-center gap-2">
+                        <span class="truncate">{{ p.name }}</span>
+                        <button class="text-[11px] opacity-70 hover:opacity-100 underline" @click="copyToClipboard(p.name)">
+                          {{ __('copy') }}
+                        </button>
+                      </div>
+                    </td>
+
+                    <!-- TOTAL -->
+                    <td class="px-4 py-2 text-right">
+                      <span v-if="p.__amount != null">{{ formatAmount(p.__amount, p.__currency) }}</span>
+                      <span v-else>—</span>
+                    </td>
+
+                    <!-- MODIFIED -->
+                    <td class="px-4 py-2">
+                      <span v-if="p.__modified" :title="p.__modified">{{ prettyDate(p.__modified) }}</span>
+                      <span v-else>—</span>
+                    </td>
+
+                    <!-- OWNER -->
+                    <td class="px-4 py-2">
+                      <span :title="p.__owner || ''">{{ ownerShort(p.__owner) || '—' }}</span>
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td class="px-4 py-2 text-center whitespace-nowrap">
+                      <Button size="sm" @click="openPaymentPlan(p.name)">
+                        <template #prefix><FeatherIcon name="external-link" class="h-4" /></template>
+                        {{ __('Open') }}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="subtle"
+                        theme="red"
+                        class="ml-2"
+                        @click="confirmDeletePaymentPlan(p.name)"
+                      >
+                        <template #prefix><FeatherIcon name="trash-2" class="h-4" /></template>
+                        {{ __('Delete') }}
+                      </Button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+
+        <!-- Data -->
+        <template v-else-if="tabs[tabIndex]?.name === 'Data'">
+          <LeadInformationAndFeedback
+            :leadData="doc"
+            :docState="document"
+            doctype="CRM Deal"
+            :docname="dealId"
+            :showDataSection="true"
+            :showFeedbackSection="false"
+          />
+        </template>
+
+        <!-- Activities -->
+        <template v-else-if="tabs[tabIndex]?.name === 'Activities'">
+          <LeadInformationAndFeedback
+            :leadData="doc"
+            :docState="document"
+            doctype="CRM Deal"
+            :docname="dealId"
+            :showDataSection="false"
+            :showFeedbackSection="true"
+          />
+        </template>
+
+        <!-- Property Preference -->
+        <template v-else-if="tabs[tabIndex]?.name === 'Property Preference'">
+          <PropertyPreference
+            :leadData="doc"
+            :docname="dealId"
+            :docState="document"
+          />
+        </template>
+
+        <!-- Default -->
+        <template v-else>
+          <Activities
+            ref="activities"
+            doctype="CRM Deal"
+            :docname="dealId"
+            :tabs="tabs"
+            v-model:reload="reload"
+            v-model:tabIndex="tabIndex"
+          />
+        </template>
+
       </template>
     </Tabs>
     <Resizer side="right" class="flex flex-col justify-between border-l">
@@ -151,7 +284,7 @@
                   (value, close) => {
                     _contact = {
                       first_name: value,
-                      company_name: doc.organization,
+                      company_name: doc.value.organization,
                     }
                     showContactModal = true
                     close()
@@ -330,6 +463,8 @@
   />
 </template>
 <script setup>
+import PropertyPreference from '@/components/PropertyPreference.vue'
+import LeadInformationAndFeedback from '@/components/LeadInformationAndFeedback.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import ErrorPage from '@/components/ErrorPage.vue'
 import Icon from '@/components/Icon.vue'
@@ -421,6 +556,22 @@ const { triggerOnChange, assignees, permissions, document, scripts, error } =
 const canDelete = computed(() => permissions.data?.permissions?.delete || false)
 
 const doc = computed(() => document.doc || {})
+
+const PAYMENT_PLAN_DOCTYPE = 'Payment Plan'
+const hydratedPlans = ref([])
+
+const paymentPlans = createResource({
+  url: 'frappe.client.get_list',
+  params: {
+    doctype: PAYMENT_PLAN_DOCTYPE,
+    fields: ['name','plan_name','title','deal','modified','owner'],
+    filters: []
+  },
+  auto: false,
+  onSuccess: (data) => {
+    hydratedPlans.value = data || []
+  }
+})
 
 watch(error, (err) => {
   if (err) {
@@ -518,7 +669,7 @@ const breadcrumbs = computed(() => {
 
 const title = computed(() => {
   let t = doctypeMeta['CRM Deal']?.title_field || 'name'
-  return doc.value?.[t] || props.dealId
+  return doc?.[t] || props.dealId
 })
 
 const statuses = computed(() => {
@@ -535,64 +686,31 @@ usePageMeta(() => {
   }
 })
 
-const tabs = computed(() => {
-  let tabOptions = [
-    {
-      name: 'Activity',
-      label: __('Activity'),
-      icon: ActivityIcon,
-    },
-    //{
-    //  name: 'Emails',
-    //  label: __('Emails'),
-    //  icon: EmailIcon,
-    //},
-    {
-      name: 'Comments',
-      label: __('Comments'),
-      icon: CommentIcon,
-    },
-    {
-      name: 'Data',
-      label: __('Data'),
-      icon: DetailsIcon,
-    },
-    {
-      name: 'Reservation',
-      label: __('Reservation'),
-      icon: DetailsIcon,
-    },
-    //{
-    //  name: 'Calls',
-    //  label: __('Calls'),
-    //  icon: PhoneIcon,
-    //},
-    {
-      name: 'Tasks',
-      label: __('Tasks'),
-      icon: TaskIcon,
-    },
-    {
-      name: 'Notes',
-      label: __('Notes'),
-      icon: NoteIcon,
-    },
-    {
-      name: 'Attachments',
-      label: __('Attachments'),
-      icon: AttachmentIcon,
-    },
-    {
-      name: 'WhatsApp',
-      label: __('WhatsApp'),
-      icon: WhatsAppIcon,
-      condition: () => whatsappEnabled.value,
-    },
-  ]
-  return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
-})
+const tabs = computed(() => [
+  { name: 'Data', label: __('Data'), icon: DetailsIcon },
+  { name: 'Activities', label: __('Activities'), icon: ActivityIcon },
+  { name: 'Property Preference', label: __('Property Preference'), icon: DetailsIcon },
+  { name: 'Payment Plans', label: __('Payment Plans'), icon: DetailsIcon },
+  { name: 'Tasks', label: __('Tasks'), icon: TaskIcon },
+  { name: 'Attachments', label: __('Attachments'), icon: AttachmentIcon },
+])
 
 const { tabIndex } = useActiveTabManager(tabs, 'lastDealTab')
+
+const isPaymentsTab = computed(() => {
+  return tabs.value?.[tabIndex.value]?.name === 'Payment Plans'
+})
+
+watch(
+  [isPaymentsTab, () => doc.value?.lead],
+  ([isTab]) => {
+    if (isTab && doc.value?.lead) {
+      paymentPlans.reload({
+        filters: [['lead', '=', doc.value.lead]]
+      })
+    }
+  }
+)
 
 const sections = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_sidepanel_sections',
@@ -722,10 +840,10 @@ function updateField(name, value) {
   }
 
   value = Array.isArray(name) ? '' : value
-  let oldValues = Array.isArray(name) ? {} : doc.value[name]
+  let oldValues = Array.isArray(name) ? {} : doc[name]
 
   if (Array.isArray(name)) {
-    name.forEach((field) => (doc.value[field] = value))
+    name.forEach((field) => (doc[field] = value))
   } else {
     doc.value[name] = value
   }
@@ -734,9 +852,9 @@ function updateField(name, value) {
     onSuccess: () => (reload.value = true),
     onError: (err) => {
       if (Array.isArray(name)) {
-        name.forEach((field) => (doc.value[field] = oldValues[field]))
+        name.forEach((field) => (doc[field] = oldValues[field]))
       } else {
-        doc.value[name] = oldValues
+        doc[name] = oldValues
       }
       toast.error(err.messages?.[0] || __('Error updating field'))
     },
