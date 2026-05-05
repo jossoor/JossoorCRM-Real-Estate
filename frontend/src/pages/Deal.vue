@@ -144,14 +144,18 @@
 
         <!-- Data -->
         <template v-else-if="tabs[tabIndex]?.name === 'Data'">
-          <LeadInformationAndFeedback
-            :leadData="doc"
-            :docState="document"
-            doctype="CRM Deal"
-            :docname="dealId"
-            :showDataSection="true"
-            :showFeedbackSection="false"
-          />
+          <div class="p-4 space-y-6">
+
+            <!-- KEEP original basic info if needed -->
+            <LeadInformationAndFeedback
+              :leadData="doc"
+              :docState="document"
+              doctype="CRM Deal"
+              :docname="dealId"
+              :showDataSection="true"
+              :showFeedbackSection="false"
+            />
+          </div>
         </template>
 
         <!-- Activities -->
