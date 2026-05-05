@@ -160,9 +160,10 @@
   },
   {
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Gender",
-   "options": "Gender"
+   "options": "Male\nFemale",
+   "reqd": 1
   },
   {
    "fieldname": "email",
