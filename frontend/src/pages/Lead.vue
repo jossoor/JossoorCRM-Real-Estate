@@ -30,7 +30,7 @@
         </template>
       </Dropdown>
 
-      <Button :label="__('Convert to Deal')" variant="solid" @click="showConvertToDealModal = true" />
+      <Button v-if="false" :label="__('Convert to Deal')" variant="solid" @click="showConvertToDealModal = true" />
       <Button :label="__('Reserve')" variant="solid" class="ml-2" @click="reserveFromLead" />
     </template>
   </LayoutHeader>
@@ -46,10 +46,6 @@
                 {{ __('Payment Plans') }}
                 <span v-if="hydratedPlans.length" class="text-sm opacity-60">({{ hydratedPlans.length }})</span>
               </div>
-              <Button variant="solid" @click="createPaymentPlan">
-                <template #prefix><FeatherIcon name="plus" class="h-4" /></template>
-                {{ __('New Payment Plan') }}
-              </Button>
             </div>
 
             <div class="overflow-auto border rounded-lg">
@@ -578,7 +574,16 @@ watch(tabs, (value) => {
     if (index !== -1) tabIndex.value = index
   }
 })
-watch([isPaymentsTab, () => lead.data?.name], ([isPayTab]) => { if (isPayTab) refreshPaymentPlans() })
+watch(
+  [isPaymentsTab, () => doc.lead],
+  ([isTab]) => {
+    if (isTab && doc.lead) {
+      paymentPlans.reload({
+        filters: [['lead', '=', doc.lead]]
+      })
+    }
+  }
+)
 
 /* ---------------- Fields sections ---------------- */
 const sections = createResource({
@@ -709,17 +714,6 @@ function confirmDeletePaymentPlan(name) {
   // robust confirm (no dependency on injected $dialog)
   const ok = window.confirm(__('Delete this Payment Plan?'))
   if (ok) deletePaymentPlan(name)
-}
-
-function createPaymentPlan() {
-  router.push({
-    name: 'PaymentPlan',
-    query: {
-      context: 'CRM Lead',
-      name: lead.data.name,
-      planDoctype: PAYMENT_PLAN_DOCTYPE,
-    },
-  })
 }
 
 const titleRef = computed(() => {
