@@ -151,9 +151,39 @@
           <p v-if="links.leadId && ppLoading" class="text-xs opacity-60 mt-1">
             {{ __('Searching payment plans…') }}
           </p>
-          <p v-else-if="links.leadId && ppSearched && !ppOptions.length" class="text-xs opacity-60 mt-1">
-            {{ __('No plans found for this lead.') }}
-          </p>
+
+          <!-- ── Professional alert: no payment plan found ── -->
+          <div
+            v-else-if="links.leadId && ppSearched && !ppOptions.length"
+            class="mt-3 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700/50 dark:bg-amber-900/20"
+          >
+            <!-- Icon -->
+            <div class="mt-0.5 flex-shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-amber-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+            <!-- Text -->
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                {{ __('No Payment Plan Found') }}
+              </p>
+              <p class="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                {{ __('This lead has no payment plans yet. Please create a Payment Plan for this lead before making a reservation.') }}
+              </p>
+            </div>
+          </div>
 
           <p v-if="links.paymentPlanId" class="text-xs opacity-70 mt-1">
             {{ __('Selected Plan') }}: {{ ppPickedLabel }}
@@ -698,7 +728,9 @@ async function runPaymentPlanSearch() {
 
     ppOptions.value = opts
 
-    if (!links.value.paymentPlanId && ppOptions.value.length === 1) {
+    // Auto-select the most recent plan (first in list, ordered by modified desc)
+    // Always auto-pick when the modal opens fresh and no plan is selected yet
+    if (!links.value.paymentPlanId && ppOptions.value.length >= 1) {
       await pickPaymentPlan(ppOptions.value[0])
     }
 
