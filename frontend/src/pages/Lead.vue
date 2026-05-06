@@ -46,6 +46,14 @@
                 {{ __('Payment Plans') }}
                 <span v-if="hydratedPlans.length" class="text-sm opacity-60">({{ hydratedPlans.length }})</span>
               </div>
+              <Button
+                size="sm"
+                variant="solid"
+                @click="router.push({ name: 'PaymentPlan', query: { lead: lead.data.name } })"
+              >
+                <template #prefix><FeatherIcon name="plus" class="h-4 w-4" /></template>
+                {{ __('Create Payment Plan') }}
+              </Button>
             </div>
 
             <div class="overflow-auto border rounded-lg">
@@ -310,7 +318,19 @@
     :seedLeadId="lead.data.name"
 :seedLeadLabel="lead.data.lead_name || lead.data.name"
 
-    @created="(r) => { toast.success(__('Reservation created')); router.push({ name: 'Reservations', query: { name: r?.name } }) }"
+    @created="async (r) => {
+      // Now that reservation exists, officially mark the lead as Reserved
+      try {
+        if (Array.isArray(document.statuses) && !document.statuses.includes(RESERVED_STATUS)) {
+          document.statuses.push(RESERVED_STATUS)
+        }
+        await triggerStatusChange(RESERVED_STATUS)
+      } catch (e) {
+        console.warn('[Lead] could not set Reserved status after reservation:', e)
+      }
+      toast.success(__('Reservation created'))
+      router.push({ name: 'Reservations', query: { name: r?.name } })
+    }"
   />
   
 
@@ -396,20 +416,31 @@ async function triggerStatusChange(value) { await triggerOnChange('status', valu
 
 
 /**
- * Set status to 'Reserved' and open the Reservation modal prefilled with this lead.
+ * Check payment plans first, then open the Reservation modal.
+ * Status is changed to Reserved ONLY after the reservation is successfully created.
  */
 async function reserveFromLead() {
   try {
-    // 1) ensure status exists in dropdown choices (optional, safe no-op if already present)
-    if (Array.isArray(document.statuses) && !document.statuses.includes(RESERVED_STATUS)) {
-      document.statuses.push(RESERVED_STATUS)
+    // 1) Check if this lead has at least one Payment Plan before doing anything
+    const res = await call('frappe.client.get_list', {
+      doctype: PAYMENT_PLAN_DOCTYPE,
+      filters: [['lead', '=', lead.data.name]],
+      fields: ['name'],
+      limit_page_length: 1,
+    })
+    const plans = Array.isArray(res?.message) ? res.message : (Array.isArray(res) ? res : [])
+
+    if (!plans.length) {
+      // No plans — warn and navigate to create a Payment Plan for this lead
+      toast.error(__('No payment plan found. Redirecting to create one…'))
+      router.push({ name: 'PaymentPlan', query: { lead: lead.data.name } })
+      return
     }
-    // 2) update the lead status
-    await triggerStatusChange(RESERVED_STATUS)
-    // 3) open the reservation modal (prefill with this lead)
+
+    // 2) Plans exist — open the reservation modal (status change happens on @created)
     showReserveModal.value = true
   } catch (e) {
-    toast.error(e?.messages?.[0] || e?.message || __('Could not set status to Reserved'))
+    toast.error(e?.messages?.[0] || e?.message || __('Could not check payment plans'))
   }
 }
 
