@@ -13,6 +13,7 @@
   "notes",
   "unit_name",
   "project_name",
+  "reservation",
   "unit_pricing_setup_section",
   "area",
   "price_per_m2",
@@ -300,6 +301,12 @@
    "fieldtype": "Currency",
    "label": "Pool Price",
    "options": "depends_on=eval:doc.has_pool==1"
+  },
+  {
+   "fieldname": "reservation",
+   "fieldtype": "Link",
+   "label": "Reservation",
+   "options": "Reservation"
   }
  ],
  "grid_page_length": 50,
