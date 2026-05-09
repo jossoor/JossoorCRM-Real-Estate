@@ -588,6 +588,33 @@
             "read_only": 1
         },
         {
+            "fieldname": "deal_financial_section",
+            "label": "Deal Financials",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "total_deal_value",
+            "label": "Total Deal Value",
+            "fieldtype": "Currency",
+            "options": "currency"
+        },
+        {
+            "fieldname": "down_payment_amount",
+            "label": "Down Payment Amount",
+            "fieldtype": "Currency",
+            "options": "currency"
+        },
+        {
+            "fieldname": "deal_date",
+            "label": "Deal Date",
+            "fieldtype": "Date"
+        },
+        {
+            "fieldname": "down_payment_date",
+            "label": "Down Payment Date",
+            "fieldtype": "Date"
+        },
+        {
             "fieldname": "per_installment",
             "fieldtype": "Currency",
             "label": "Per Installment",

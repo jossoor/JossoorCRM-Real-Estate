@@ -495,7 +495,9 @@ watch(() => props.modelValue, async (open) => {
     })
     form.value = blank
     form.value[RF.value.reservation_date] = todayISO()
-    form.value[RF.value.status] = form.value[RF.value.status] || 'Reserved'
+    if (!form.value.name && !form.value[RF.value.status]) {
+      form.value[RF.value.status] = 'Reserved'
+    }
 
     links.value = { leadId: '', projectId: '', paymentPlanId: '', unitId: '', unitIsProjectUnit: false }
     leadPickedLabel.value = projectPickedLabel.value = unitPickedLabel.value = ppPickedLabel.value = ''

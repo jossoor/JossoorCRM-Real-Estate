@@ -172,7 +172,7 @@ def create_deal_from_reservation(doc, method=None):
         return
 
     # only from Reserved -> Deal Done
-    if old_status and old_status != "Reserved":
+    if old_doc and old_status not in (None, "Reserved"):
         return
 
     # already linked
@@ -213,6 +213,23 @@ def create_deal_from_reservation(doc, method=None):
     # financial defaults
     deal.deal_value = doc.total_cost
     deal.expected_deal_value = doc.total_cost
+    deal.total_deal_value = doc.total_cost or 0
+
+    # 🔥 get down payment from payment plan snapshot
+    deal.down_payment_amount = (
+        getattr(payment_plan, "total_downpayment_value", None)
+        if payment_plan else None
+    ) or (
+        getattr(doc, "plan_total_downpayment_value", None)
+    ) or 0
+
+    deal.deal_date = frappe.utils.nowdate()
+
+    deal.down_payment_date = (
+        getattr(doc, "plan_downpayment_date", None)
+        or getattr(payment_plan, "downpayment_date", None)
+        or None
+    )
 
     # reservation snapshot
     deal.reservation = doc.name
