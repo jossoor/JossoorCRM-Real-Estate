@@ -3,29 +3,56 @@
 
     <!-- PAGE HEADER (only when coming from Reservation) -->
     <div
-      v-if="showHeader"
+      v-if="showHeader || inLeadContext"
       class="sticky top-0 z-10 bg-white/70 dark:bg-gray-950/70 backdrop-blur print:hidden"
     >
       <div class="mx-auto w-full max-w-screen-2xl px-4 md:px-6 py-3 flex items-center justify-between">
         <!-- left: breadcrumb -->
         <div class="flex items-center gap-2 text-sm">
-          <RouterLink :to="{ name: 'Reservations' }" class="text-gray-500 hover:underline">Reservations</RouterLink>
-          <span>/</span>
-
-          <RouterLink
-            v-if="reservationId"
-            :to="{ name: 'Reservation', params: { name: reservationId } }"
-            class="text-gray-500 hover:underline"
-          >
-            {{ reservationId }}
-          </RouterLink>
-          <span v-if="reservationId">/</span>
-
-          <span class="font-medium truncate">{{ planHeaderTitle }}</span>
+          <template v-if="inLeadContext && !reservationId">
+            <RouterLink :to="{ name: 'Leads' }" class="text-gray-500 hover:underline">{{ __('Leads') }}</RouterLink>
+            <span>/</span>
+            <RouterLink :to="{ name: 'Lead', params: { leadId: ctxDocName } }" class="text-gray-500 hover:underline">{{ leadLabel || ctxDocName }}</RouterLink>
+            <span>/</span>
+            <span class="font-medium truncate">{{ __('New Payment Plan') }}</span>
+          </template>
+          <template v-else>
+            <RouterLink :to="{ name: 'Reservations' }" class="text-gray-500 hover:underline">Reservations</RouterLink>
+            <span>/</span>
+            <RouterLink
+              v-if="reservationId"
+              :to="{ name: 'Reservation', params: { name: reservationId } }"
+              class="text-gray-500 hover:underline"
+            >
+              {{ reservationId }}
+            </RouterLink>
+            <span v-if="reservationId">/</span>
+            <span class="font-medium truncate">{{ planHeaderTitle }}</span>
+          </template>
         </div>
 
         <!-- right: actions -->
         <div class="flex items-center gap-2">
+          <!-- Save button always visible in header (disabled until schedule generated) -->
+          <Button
+            variant="solid"
+            :disabled="!planRows.length"
+            @click="savePlan"
+          >
+            <template #prefix><FeatherIcon name="save" class="h-4 w-4" /></template>
+            {{ __('Save Plan') }}
+          </Button>
+
+          <!-- Back to Lead when coming from lead context -->
+          <RouterLink
+            v-if="inLeadContext && !reservationId"
+            :to="{ name: 'Lead', params: { leadId: ctxDocName }, hash: '#payment%20plans' }"
+            class="rounded-lg border px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm"
+          >
+            ← {{ __('Back to Lead') }}
+          </RouterLink>
+
+          <!-- Back to Reservation when coming from reservation context -->
           <RouterLink
             v-if="reservationId"
             :to="{ name: 'Reservation', params: { name: reservationId } }"

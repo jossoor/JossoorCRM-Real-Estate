@@ -59,15 +59,16 @@ const routes = [
     name: 'PaymentPlan',
     component: () => import('@/components/PaymentPlanTab.vue'),
     props: route => ({
-      contextDoctype:   route.query.context || '',
-      docName:          route.query.reservation || route.query.name || '',
+      // If ?lead= is provided, treat it as a CRM Lead context so the component
+      // pre-fills the Lead field and the inLeadContext watcher fires correctly
+      contextDoctype:   route.query.context || (route.query.lead ? 'CRM Lead' : ''),
+      docName:          route.query.reservation || route.query.name || route.query.lead || '',
       unitName:         route.query.unit || '',
       planDoctype:      route.query.planDoctype || 'Payment Plan',
       projectName:      route.query.project || '',
       unitType:         route.query.unit_type || '',
       unitCategories:   route.query.unit_categories || '',
       existingPlanName: route.query.plan || '',
-      // optional: support opening an existing plan by name
       name:             route.query.name || '',
       lead:             route.query.lead || ''
     }),
