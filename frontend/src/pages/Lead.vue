@@ -49,7 +49,7 @@
               <Button
                 size="sm"
                 variant="solid"
-                @click="router.push({ name: 'PaymentPlan', query: { lead: lead.data.name } })"
+                @click="router.push({ name: 'PaymentPlan', query: { lead: lead.data.name, showHeader: '1' } })"
               >
                 <template #prefix><FeatherIcon name="plus" class="h-4 w-4" /></template>
                 {{ __('Create Payment Plan') }}
@@ -433,7 +433,7 @@ async function reserveFromLead() {
     if (!plans.length) {
       // No plans — warn and navigate to create a Payment Plan for this lead
       toast.error(__('No payment plan found. Redirecting to create one…'))
-      router.push({ name: 'PaymentPlan', query: { lead: lead.data.name } })
+      router.push({ name: 'PaymentPlan', query: { lead: lead.data.name, showHeader: '1' } })
       return
     }
 
