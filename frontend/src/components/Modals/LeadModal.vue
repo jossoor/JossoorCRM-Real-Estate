@@ -38,7 +38,7 @@
 
             <!-- last_name → Data -->
             <FieldWrap :label="__('Last Name')">
-              <input v-model="lead.doc.last_name" type="text" class="fi" maxlength="140" 
+              <input v-model="lead.doc.last_name" type="text" class="fi" maxlength="140"
                 :class="{ 'border-red-400 bg-red-50': fieldError === 'last_name' }" />
             </FieldWrap>
 
@@ -130,7 +130,7 @@
                 <SelectField
                   v-model="lead.doc.project_unit"
                   :options="filteredProjectUnits.map(u => ({ value: u.name, label: u.unit_name || u.name }))"
-                  :placeholder="!lead.doc.project ? __('Select project first') : __('No results found')"
+                  :placeholder="!lead.doc.project ? __('Select project first') : __('Select unit')"
                   :disabled="!lead.doc.project"
                 />
               </FieldWrap>
@@ -374,11 +374,15 @@
               <!-- Notes → Text Editor -->
               <PropCard :title="__('Notes')">
                 <textarea v-model="lead.doc.notes" maxlength="1000"
-                  :class="[
-                    'w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#4A90E2] transition-colors',
-                    fieldError === 'notes' ? 'border-red-400 bg-red-50' : ''
-                  ]"
+                  class="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#4A90E2] transition-colors"
+                  :class="{ 'border-red-400 bg-red-50': fieldError === 'notes' }"
                   rows="4" :placeholder="__('Add any additional notes...')" />
+                <!-- BUG 2 FIX: live char-count warning for notes -->
+                <p v-if="(lead.doc.notes || '').length >= 900"
+                  class="text-xs mt-1"
+                  :class="(lead.doc.notes || '').length >= 1000 ? 'text-red-500' : 'text-amber-500'">
+                  {{ (lead.doc.notes || '').length }}/1000
+                </p>
               </PropCard>
 
             </div>
@@ -456,7 +460,6 @@ function formatPrice(val) {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Parse CRM Lead doctype JSON to extract ALL Select field options
-// This runs once at module load — zero hard-coding, zero external file needed.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const DOCTYPE_JSON = {
@@ -483,7 +486,6 @@ const DOCTYPE_JSON = {
   ]
 }
 
-// Parse options from the embedded JSON
 function parseSelectOptions(doctypeJson) {
   const opts = {}
   for (const field of doctypeJson.fields) {
@@ -497,7 +499,6 @@ function parseSelectOptions(doctypeJson) {
 
 const OPT = parseSelectOptions(DOCTYPE_JSON)
 
-// Build subtype groupings from the full list
 const SUBTYPES_BY_TYPE = {
   Residential:    ['Apartment', 'Duplex', 'Penthouse', 'Studio', 'Villa', 'Twin House', 'Townhouse', 'Chalet', 'Cabin'],
   Commercial:     ['Shop', 'Showroom', 'Warehouse'],
@@ -505,18 +506,15 @@ const SUBTYPES_BY_TYPE = {
   Land:           ['Plot - Residential', 'Plot - Commercial', 'Plot - Industrial'],
 }
 
-// Filtered subtypes based on selected property_type
 const currentSubtypes = computed(() =>
   lead.doc?.property_type ? (SUBTYPES_BY_TYPE[lead.doc.property_type] ?? []) : []
 )
 
 const currentFinishingOptions = computed(() => {
   const all = OPT.property_finishing || []
-
   if (lead.doc?.property_decoration === 'Core & Shell') {
     return all.filter(opt => opt !== 'Fully Finished')
   }
-
   return all
 })
 
@@ -530,7 +528,7 @@ watch(
 )
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Inline sub-components (self-contained, no extra files needed)
+// Inline sub-components
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const SectionHeader = defineComponent({
@@ -605,9 +603,13 @@ const TypeChip = defineComponent({
 })
 
 /**
- * SelectField — unified select for both:
- *   - string[] options  (Select fields from OPT)
- *   - { value, label }[] options  (Link fields from backend)
+ * SelectField — unified select for both string[] and { value, label }[] options.
+ *
+ * BUG 1 FIX: The placeholder <option> used to always render when p.placeholder
+ * was any truthy string, so it appeared selected even when real options existed.
+ * Fix: mark it `disabled` so it can't be re-chosen, and set `hidden` to true
+ * once a real value is selected — this removes it from the visible list while
+ * still displaying the placeholder text when the value is empty.
  */
 const SelectField = defineComponent({
   props: {
@@ -628,6 +630,7 @@ const SelectField = defineComponent({
 
     return () => {
       const hasOptions = normalizedOptions.value.length > 0
+      // Show placeholder option only when there is placeholder text OR no options at all
       const showPlaceholder = !!p.placeholder || !hasOptions
 
       return h('select', {
@@ -643,9 +646,12 @@ const SelectField = defineComponent({
         ...(showPlaceholder
           ? [h('option', {
               value: '',
-              disabled: hasOptions ? false : true,
+              // Always disabled — user cannot re-select the placeholder
+              disabled: true,
               selected: !p.modelValue,
-              hidden: false,
+              // Hide it from the open dropdown list once a real value is chosen,
+              // but keep it visible as the displayed label when value is empty.
+              hidden: !!p.modelValue,
             }, p.placeholder || __('No results found'))]
           : []),
         ...normalizedOptions.value.map(o =>
@@ -740,7 +746,6 @@ const leadStatuses = computed(() => {
 })
 
 // ─── Remote resources — Link fields only ──────────────────────────────────────
-// Select field options come from OPT (parsed from embedded JSON), NOT from API calls.
 
 const salutations = createResource({
   url: 'frappe.client.get_list',
@@ -849,11 +854,11 @@ async function createNewLead() {
         }
 
         const invalidChars = [';', '<', '>', '{', '}', '[', ']']
-          if (invalidChars.some(ch => String(lead.doc.first_name || '').includes(ch))) {
-            fieldError.value = 'first_name'
-            error.value = __('First Name contains invalid characters')
-            return error.value
-          }
+        if (invalidChars.some(ch => String(lead.doc.first_name || '').includes(ch))) {
+          fieldError.value = 'first_name'
+          error.value = __('First Name contains invalid characters')
+          return error.value
+        }
 
         if (!lead.doc.gender) {
           fieldError.value = 'gender'
@@ -877,16 +882,18 @@ async function createNewLead() {
           return error.value
         }
 
-        // Text max lengths
-        if (validateMax('first_name', 'First Name', 50)) return error.value
-        if (validateMax('last_name', 'Last Name', 140)) return error.value
-        if (validateMax('email', 'Email', 140)) return error.value
-        if (validateMax('mobile_no', 'Mobile No', 20)) return error.value
-        if (validateMax('phone', 'Other Phone', 20)) return error.value
-        if (validateMax('property_project', 'Project Name', 140)) return error.value
-        if (validateMax('notes', 'Notes', 1000)) return error.value
-        if (validateMax('property_city', 'City', 140)) return error.value
-        if (validateMax('property_region', 'Region / District', 140)) return error.value
+        // BUG 2 FIX: Text max-length validation with field highlighting.
+        // These checks run even if the HTML maxlength blocked typing,
+        // because values can arrive via props.defaults or programmatic assignment.
+        if (validateMax('first_name',        'First Name',         50))  return error.value
+        if (validateMax('last_name',         'Last Name',          140)) return error.value
+        if (validateMax('email',             'Email',              140)) return error.value
+        if (validateMax('mobile_no',         'Mobile No',          20))  return error.value
+        if (validateMax('phone',             'Other Phone',        20))  return error.value
+        if (validateMax('property_city',     'City',               140)) return error.value
+        if (validateMax('property_region',   'Region / District',  140)) return error.value
+        if (validateMax('property_project',  'Project Name',       140)) return error.value
+        if (validateMax('notes',             'Notes',              1000)) return error.value
 
         // Mobile validation (Egypt)
         const mobileRaw = String(lead.doc.mobile_no || '').trim()
@@ -963,7 +970,7 @@ async function createNewLead() {
 
           lead.doc.property_year_built = yearNum
         }
-        
+
         if (validateNumberRange('property_down_payment', 'Down Payment', 0, 100)) return error.value
 
         if (lead.doc.property_space != null && lead.doc.property_space !== '') {
@@ -1005,8 +1012,7 @@ async function createNewLead() {
           return error.value
         }
 
-        // Delivery date sanity
-                // Delivery date validation
+        // Delivery date validation
         if (lead.doc.property_delivery_date) {
           const deliveryDate = new Date(lead.doc.property_delivery_date)
 

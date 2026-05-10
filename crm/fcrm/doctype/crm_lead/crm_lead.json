@@ -42,6 +42,7 @@
   "image",
   "property_preferences_tab",
   "core_preferences_section",
+  "property_country",  
   "property_city",
   "property_region",
   "column_break_prop1",
@@ -320,16 +321,22 @@
    "label": "Core Preferences"
   },
   {
+  "fieldname": "property_country",
+  "fieldtype": "Select",
+  "label": "Country",
+  "options": "Egypt\nSaudi Arabia",
+  "insert_after": "core_preferences_section",
+  "reqd": 0
+},
+  {
    "fieldname": "property_city",
-   "fieldtype": "Select",
-   "label": "City",
-   "options": "Cairo\nNew Cairo\nNasr City\nHeliopolis\nMaadi\n6th of October\nSheikh Zayed\nZamalek\nNew Administrative Capital\nAlexandria\nGiza"
+   "fieldtype": "Data",
+   "label": "City"
   },
   {
    "fieldname": "property_region",
-   "fieldtype": "Select",
-   "label": "Region / District",
-   "options": "Maadi\nDegla\nSarayat\nZohour\nNew Maadi\nHeliopolis\nNasr City\nMadinet Nasr\nZamalek\nGarden City\nDowntown Cairo\nMohandessin\nAgouza\nDokki\nShoubra\nShubra El Kheima\nNew Cairo - 1st Settlement\nNew Cairo - 5th Settlement\nNew Cairo - 3rd Settlement\nBeit El Watan\nAl Rehab City\nMadinaty\nMostakbal City\nAl Shorouk City\nAl Obour City\nNew Administrative Capital - R1\nNew Administrative Capital - R2\nNew Administrative Capital - R3\n6th of October - Hay 1\n6th of October - Hay 2\n6th of October - Hay 3\nSheikh Zayed - Hay 1\nSheikh Zayed - Hay 2\nNorth Coast\nAin Sokhna\nEl Gouna\nHurghada\nSharm El Sheikh"
+   "fieldtype": "Data",
+   "label": "Region / District"
   },
   {
    "fieldname": "column_break_prop1",
@@ -740,7 +747,7 @@
  "image_field": "image",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-14 15:58:11.774853",
+ "modified": "2026-05-10 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "FCRM",
  "name": "CRM Lead",
