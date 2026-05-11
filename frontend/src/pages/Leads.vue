@@ -26,10 +26,8 @@
     v-model="ui"
     :status-list="statusList"
     :project-list="projectList"
-    :owner-list="ownerList"
     status-field="status"
     :project-field="PROJECT_FIELD"
-    owner-field="lead_owner"
     :last-contact-field="LAST_CONTACT_FIELD.fieldname"
     :list="leads"
     doctype="CRM Lead"
@@ -41,6 +39,22 @@
     @clear-all="handleClearAll"
   />
 
+  <div class="px-4 pt-2">
+    <ViewControls
+      ref="viewControls"
+      v-model="leads"
+      v-model:loadMore="loadMore"
+      v-model:resizeColumn="triggerResize"
+      v-model:updatedPageCount="updatedPageCount"
+      doctype="CRM Lead"
+      :excluded_filters="excludedFilters"
+      :options="{
+        allowedViews: ['list', 'group_by', 'kanban'],
+        disablePersistence: false,
+      }"
+    />
+  </div>
+
   <!-- Drawer (All Filters) -->
   <AllFiltersDrawer
     v-if="SHOW_LEAD_FILTERS"
@@ -50,23 +64,9 @@
     :project-list="projectList"
     :location-list="locationList"
     :source-list="sourceList"
-    :origin-list="originList"
-    :type-list="typeList"
+    :owner-list="ownerList"
     @apply="applyFiltersFromPanel"
     @clear="clearDrawer"
-  />
-
-  <!-- ViewControls manages list/group_by/kanban data loading -->
-  <ViewControls
-    ref="viewControls"
-    v-model="leads"
-    v-model:loadMore="loadMore"
-    v-model:resizeColumn="triggerResize"
-    v-model:updatedPageCount="updatedPageCount"
-    doctype="CRM Lead"
-    :excluded_filters="excludedFilters"
-    :options="{ allowedViews: ['list', 'group_by', 'kanban'], disablePersistence: false }"
-    hideUI="true"
   />
 
   <!-- Kanban View -->
@@ -585,7 +585,15 @@ const { getUser } = usersStore()
 const statusStoreInstance = statusesStore()
 
 const ownerList = computed(() => {
-  return []
+  const users = window?.frappe?.boot?.user_info || {}
+
+  return Object.values(users)
+    .filter(u => u.name && u.full_name)
+    .map(u => ({
+      label: u.full_name,
+      value: u.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 })
 
 function getLeadStatusSafe(statusName) {
@@ -734,22 +742,6 @@ const sourceList = computed(() => {
   return Array.from(m.values())
 })
 
-const originList = computed(() => {
-  const m = new Map(fullOriginCatalog.value.map((o) => [o.value, o]))
-  ;(seenOrigins.value || []).forEach((o) => {
-    if (!m.has(o.value)) m.set(o.value, o)
-  })
-  return Array.from(m.values())
-})
-
-const typeList = computed(() => {
-  const m = new Map(fullTypeCatalog.value.map((o) => [o.value, o]))
-  ;(seenTypes.value || []).forEach((o) => {
-    if (!m.has(o.value)) m.set(o.value, o)
-  })
-  return Array.from(m.values())
-})
-
 /* ---------- filter helpers ---------- */
 function toTuples(filters = []) {
   const DOC = 'CRM Lead'
@@ -867,53 +859,175 @@ function handleClearAll() {
 }
 
 /* ----------- FIXED: never dedupe away >= / <= ----------- */
-function applyFilters(filters = [], replace = false) {
-  let validTuples = []
+function applyFiltersFromPanel(payload = {}) {
+  Object.assign(ui, payload)
 
-  const fullFilters = Array.isArray(filters) ? filters : rebuildAllFilters()
-
-  if (fullFilters.length) {
-    for (const f of fullFilters) {
-      if (!f?.fieldname || f.value === '' || f.value === null || f.value === undefined) continue
-      let value = f.value
-      if (f.fieldname === 'delayed') value = value ? 1 : 0
-      validTuples.push(['CRM Lead', f.fieldname, String(f.operator || '=').toLowerCase(), value])
-    }
-  }
-
-  const vc = viewControls.value
-  if (!vc) return
-
-  // pagination reset
-  loadMore.value = 1
-  updatedPageCount.value = 20
-
-  if (validTuples.length === 0) {
-    try {
-      if (typeof vc.updateFilter === 'function') {
-        vc.updateFilter({})
-      } else if (typeof vc.clearFilters === 'function') {
-        vc.clearFilters()
-      }
-      vc.reload?.()
-    } catch (e) {
-      console.warn('[Leads] clearFilters failed:', e)
-    }
-    return
-  }
-
-  try {
-    if (typeof vc.setFilters === 'function') {
-      vc.setFilters(validTuples)
-    } else if (typeof vc.applyFilter === 'function') {
-      // ALWAYS replace when applying from our master 'ui' state
-      vc.applyFilter({ filters: validTuples, replace: true })
-    }
-  } catch (e) {
-    console.error('[Leads] apply/set filters error:', e)
-  }
+  applyFilters()
 }
 
+function applyFilters() {
+  if (!viewControls.value) return
+
+  const filters = []
+
+  // Status
+  if (ui.status) {
+    filters.push({
+      fieldname: 'status',
+      operator: '=',
+      value: ui.status,
+    })
+  }
+
+  // Project
+  if (ui.project) {
+    filters.push({
+      fieldname: PROJECT_FIELD.value || 'project',
+      operator: '=',
+      value: ui.project,
+    })
+  }
+
+  // Territory
+  if (ui.territory) {
+    filters.push({
+      fieldname: LOCATION_FIELD.value || 'territory',
+      operator: '=',
+      value: ui.territory,
+    })
+  }
+
+  // Lead Source
+  if (ui.lead_source) {
+    filters.push({
+      fieldname: SOURCE_FIELD.value || 'lead_source',
+      operator: '=',
+      value: ui.lead_source,
+    })
+  }
+
+  // Space Min
+  if (ui.space_min) {
+    filters.push({
+      fieldname: 'property_space',
+      operator: '>=',
+      value: Number(ui.space_min),
+    })
+  }
+
+  // Space Max
+  if (ui.space_max) {
+    filters.push({
+      fieldname: 'property_space',
+      operator: '<=',
+      value: Number(ui.space_max),
+    })
+  }
+
+  // Budget Min
+  if (ui.budget_min) {
+    filters.push({
+      fieldname: 'property_budget',
+      operator: '>=',
+      value: Number(ui.budget_min),
+    })
+  }
+
+  // Budget Max
+  if (ui.budget_max) {
+    filters.push({
+      fieldname: 'property_budget',
+      operator: '<=',
+      value: Number(ui.budget_max),
+    })
+  }
+
+  // Country
+  if (ui.property_country) {
+    filters.push({
+      fieldname: 'property_country',
+      operator: '=',
+      value: ui.property_country,
+    })
+  }
+
+  // City
+  if (ui.property_city) {
+    filters.push({
+      fieldname: 'property_city',
+      operator: '=',
+      value: ui.property_city,
+    })
+  }
+
+  // Region
+  if (ui.property_region) {
+    filters.push({
+      fieldname: 'property_region',
+      operator: '=',
+      value: ui.property_region,
+    })
+  }
+
+  // Bedrooms
+  if (ui.property_bedrooms) {
+    filters.push({
+      fieldname: 'property_bedrooms',
+      operator: '=',
+      value: ui.property_bedrooms,
+    })
+  }
+
+  // Bathrooms
+  if (ui.property_bathrooms) {
+    filters.push({
+      fieldname: 'property_bathrooms',
+      operator: '=',
+      value: ui.property_bathrooms,
+    })
+  }
+
+  // Property Budget Min
+  if (ui.property_min_price) {
+    filters.push({
+      fieldname: 'property_min_price',
+      operator: '>=',
+      value: ui.property_min_price,
+    })
+  }
+
+  // Property Budget Max
+  if (ui.property_max_price) {
+    filters.push({
+      fieldname: 'property_max_price',
+      operator: '<=',
+      value: ui.property_max_price,
+    })
+  }
+
+  // Last Contacted
+  if (ui.last_contacted_from) {
+    filters.push({
+      fieldname: LAST_CONTACT_FIELD.value.fieldname,
+      operator: '>=',
+      value: ui.last_contacted_from,
+    })
+  }
+
+  if (ui.last_contacted_to) {
+    filters.push({
+      fieldname: LAST_CONTACT_FIELD.value.fieldname,
+      operator: '<=',
+      value: ui.last_contacted_to,
+    })
+  }
+
+  console.log('FILTERS', filters)
+
+  viewControls.value.updateFilter(filters)
+
+  viewControls.value.reload?.()
+}
 
 // apply route query -> filters for the Leads page
 
@@ -1078,8 +1192,19 @@ const ui = reactive({
   budget_min: '',
   budget_max: '',
   lead_source: '',
-  lead_origin: '',
-  lead_type: ''
+  territory:'',
+  space_min:'',
+  space_max:'',
+  budget_min:'',
+  budget_max:'',
+  lead_source:'',
+  property_country:'',
+  property_city:'',
+  property_region:'',
+  property_bedrooms:'',
+  property_bathrooms:'',
+  property_min_price:'',
+  property_max_price:'',
 })
 
 function toNum(v) {
@@ -1117,6 +1242,61 @@ const rebuildAllFilters = () => {
   if (ui.lead_source) F.push({ fieldname: SOURCE_FIELD.value, operator: '=', value: ui.lead_source })
   if (ui.lead_origin) F.push({ fieldname: 'lead_origin', operator: '=', value: ui.lead_origin })
   if (ui.lead_type)   F.push({ fieldname: 'lead_type',   operator: '=', value: ui.lead_type })
+  if (ui.property_country) {
+    filters.push({
+      fieldname: 'property_country',
+      operator: '=',
+      value: ui.property_country,
+    })
+  }
+
+  if (ui.property_city) {
+    filters.push({
+      fieldname: 'property_city',
+      operator: '=',
+      value: ui.property_city,
+    })
+  }
+
+  if (ui.property_region) {
+    filters.push({
+      fieldname: 'property_region',
+      operator: '=',
+      value: ui.property_region,
+    })
+  }
+
+  if (ui.property_bedrooms) {
+    filters.push({
+      fieldname: 'property_bedrooms',
+      operator: '=',
+      value: ui.property_bedrooms,
+    })
+  }
+
+  if (ui.property_bathrooms) {
+    filters.push({
+      fieldname: 'property_bathrooms',
+      operator: '=',
+      value: ui.property_bathrooms,
+    })
+  }
+
+  if (ui.property_min_price) {
+    filters.push({
+      fieldname: 'property_min_price',
+      operator: '>=',
+      value: ui.property_min_price,
+    })
+  }
+
+  if (ui.property_max_price) {
+    filters.push({
+      fieldname: 'property_max_price',
+      operator: '<=',
+      value: ui.property_max_price,
+    })
+  }
   
   // Owner
   if (ui.owner && ui.owner !== 'all') {
@@ -1166,28 +1346,6 @@ const rebuildAllFilters = () => {
   if (sMax !== null) F.push({ fieldname: SPACE_FIELD.value, operator: '<=', value: sMax })
   
   return F
-}
-
-function applyFiltersFromPanel(draft = {}) {
-  Object.assign(ui, {
-    status:              firstKey(draft, ['status'], ''),
-    project:             firstKey(draft, ['project'], ''),
-    location:            firstKey(draft, ['territory','location','crm_location','lead_territory'], ''),
-    last_contacted_from: firstKey(draft, ['last_contacted_from','lastFrom','from_date'], ''),
-    last_contacted_to:   firstKey(draft, ['last_contacted_to','lastTo','to_date'], ''),
-    space_min:           firstKey(draft, ['space_min','spaceFrom','min_space','minSpace','area_min','min_area'], ui.space_min),
-    space_max:           firstKey(draft, ['space_max','spaceTo','max_space','maxSpace','area_max','max_area'], ui.space_max),
-    budget_min:          firstKey(draft, ['budget_min','budgetFrom','min_budget','minBudget','price_min','min_price','expected_budget_min'], ui.budget_min),
-    budget_max:          firstKey(draft, ['budget_max','budgetTo','max_budget','maxBudget','price_max','max_price','expected_budget_max'], ui.budget_max),
-    lead_source:         firstKey(draft, ['lead_source','source'], ''),
-    lead_origin:         firstKey(draft, ['lead_origin','origin'], ''),
-    lead_type:           firstKey(draft, ['lead_type','type'], ''),
-  })
-
-  const F = rebuildAllFilters()
-  // Use replace=true to ensuring clearing works
-  applyFilters(F, true)
-  showFilters.value = false
 }
 
 function clearDrawer() {

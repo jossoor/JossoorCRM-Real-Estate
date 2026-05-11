@@ -20,16 +20,17 @@
           />
         </div>
 
-        <!-- All Filters button -->
+        <!--
         <button
           class="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-300 bg-white px-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100
-                 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
           @click="$emit('open-all')"
           type="button"
         >
           <FeatherIcon name="filter" class="h-4 w-4 opacity-70" />
           <span class="truncate">{{ __('All Filters') }}</span>
         </button>
+        -->
 
         <!-- Clear button -->
         <button
@@ -299,10 +300,6 @@ const projectValue = computed({
   get: () => ui.value.project || '',
   set: v  => { ui.value.project = v || '' }
 })
-const owner = computed({
-  get: () => ui.value.owner || 'all',
-  set: v  => { ui.value.owner = (v === 'all' ? '' : v) }
-})
 const lastFrom = computed({
   get: () => ui.value.last_contacted_from || '',
   set: v  => { ui.value.last_contacted_from = v || '' }
@@ -385,28 +382,11 @@ const projectDropdownOptions = computed(() => [{
   ],
 }])
 
-const ownerDropdownOptions = computed(() => [{
-  group: 'Lead Owner',
-  hideLabel: true,
-  items: [
-    { label: __('All owners'),      onClick: () => { owner.value = 'all';        pushFilters() } },
-    { label: __('Assigned to me'),  onClick: () => { owner.value = 'me';         pushFilters() } },
-    { label: __('Unassigned'),      onClick: () => { owner.value = 'unassigned'; pushFilters() } },
-    ...normalizedOwnerList.value.map(opt => ({ label: opt.label, onClick: () => { owner.value = opt.value; pushFilters() } })),
-  ],
-}])
-
 /* labels / styles */
 const statusLabel = computed(() => status.value || __('Status'))
 const projectChipText = computed(() => {
   const hit = normalizedProjectList.value.find(o => o.value === projectValue.value)
   return hit?.label || __('Project')
-})
-const ownerLabel = computed(() => {
-  if (owner.value === 'all') return __('Lead Owner')
-  if (owner.value === 'me') return __('Assigned to me')
-  if (owner.value === 'unassigned') return __('Unassigned')
-  return owner.value
 })
 const displayDateRange = computed(() => {
   const f = lastFrom.value, t = lastTo.value
@@ -430,10 +410,6 @@ function clearStatus() {
 }
 function clearProject() {
   projectValue.value = ''
-  pushFilters()
-}
-function clearOwner() {
-  owner.value = 'all'
   pushFilters()
 }
 function clearLastContacted() {
