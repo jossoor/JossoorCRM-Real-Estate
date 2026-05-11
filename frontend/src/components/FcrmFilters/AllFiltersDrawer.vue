@@ -122,6 +122,26 @@
             </div>
           </div>
 
+          <!-- Lead Owner -->
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-medium text-gray-700">Lead Owner</label>
+
+            <select
+              v-model="draft.lead_owner"
+              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+            >
+              <option value="">Select owner</option>
+
+              <option
+                v-for="o in opts.owner"
+                :key="o.value"
+                :value="o.value"
+              >
+                {{ o.label }}
+              </option>
+            </select>
+          </div>
+
           <!-- Space (Min & Max as TEXT, sanitized on Apply) -->
           <div class="space-y-1.5" v-if="fieldHints.has_space">
             <label class="text-[12px] font-medium text-gray-700">Space (m²)</label>
@@ -180,36 +200,72 @@
             <small v-else-if="!opts.lead_source.length" class="text-xs text-gray-400">No options</small>
           </div>
 
-          <!-- Origin -->
           <div class="space-y-1.5">
-            <label class="text-[12px] font-medium text-gray-700">Lead Origin</label>
-            <select
-              :key="'origin-'+(opts.lead_origin?.length||0)+'-'+draft.lead_origin"
-              v-model="draft.lead_origin"
-              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5 text-[13px] text-gray-800 shadow-sm"
-            >
-              <option value="">{{ __('Select origin') }}</option>
-              <option v-for="o in opts.lead_origin" :key="o.value" :value="o.value">{{ o.label }}</option>
-            </select>
-            <small v-if="loading.lead_origin" class="text-xs text-gray-500">Loading…</small>
-            <small v-else-if="errors.lead_origin" class="text-xs text-red-600">{{ errors.lead_origin }}</small>
-            <small v-else-if="!opts.lead_origin.length" class="text-xs text-gray-400">No options</small>
-          </div>
+            <label class="text-[12px] font-medium text-gray-700">Country</label>
 
-          <!-- Type -->
+            <input
+              v-model="draft.property_country"
+              type="text"
+              placeholder="Egypt / Saudi Arabia"
+              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+            />
+          </div>
           <div class="space-y-1.5">
-            <label class="text-[12px] font-medium text-gray-700">Lead Type</label>
-            <select
-              :key="'type-'+(opts.lead_type?.length||0)+'-'+draft.lead_type"
-              v-model="draft.lead_type"
-              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5 text-[13px] text-gray-800 shadow-sm"
-            >
-              <option value="">{{ __('Select type') }}</option>
-              <option v-for="o in opts.lead_type" :key="o.value" :value="o.value">{{ o.label }}</option>
-            </select>
-            <small v-if="loading.lead_type" class="text-xs text-gray-500">Loading…</small>
-            <small v-else-if="errors.lead_type" class="text-xs text-red-600">{{ errors.lead_type }}</small>
-            <small v-else-if="!opts.lead_type.length" class="text-xs text-gray-400">No options</small>
+            <label class="text-[12px] font-medium text-gray-700">City</label>
+
+            <input
+              v-model="draft.property_city"
+              type="text"
+              placeholder="City"
+              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-medium text-gray-700">Region</label>
+
+            <input
+              v-model="draft.property_region"
+              type="text"
+              placeholder="Region"
+              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-medium text-gray-700">Bedrooms</label>
+
+            <input
+              v-model="draft.property_bedrooms"
+              type="number"
+              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-medium text-gray-700">Bathrooms</label>
+
+            <input
+              v-model="draft.property_bathrooms"
+              type="number"
+              class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-medium text-gray-700">Property Budget</label>
+
+            <div class="flex gap-2">
+              <input
+                v-model="draft.property_min_price"
+                type="number"
+                placeholder="Min"
+                class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+              />
+
+              <input
+                v-model="draft.property_max_price"
+                type="number"
+                placeholder="Max"
+                class="h-9 w-full rounded-md border border-gray-300 bg-white px-2.5"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -244,6 +300,10 @@ const props = defineProps({
   sourceList:   { type: Array, default: () => [] },
   originList:   { type: Array, default: () => [] },
   typeList:     { type: Array, default: () => [] },
+  ownerList: {
+    type: Array,
+    default: () => [],
+  },
 })
 const emit = defineEmits(['apply','clear','update:show'])
 
@@ -251,7 +311,8 @@ const emit = defineEmits(['apply','clear','update:show'])
 const draft = reactive({
   status:'', project:'', last_contacted_from:'', last_contacted_to:'',
   territory:'', space_min:'', space_max:'', budget_min:'', budget_max:'',
-  lead_source:'', lead_origin:'', lead_type:''
+  lead_source:'', lead_origin:'', lead_type:'', property_country:'',
+  property_city:'', property_region:'', property_project:'', property_bedrooms:'', property_bathrooms:'', property_min_price:'', property_max_price:'',
 })
 
 /* Sync draft when opening or when parent model changes while closed */
@@ -269,6 +330,14 @@ function syncFromParent() {
     lead_source: props.modelValue.lead_source || '',
     lead_origin: props.modelValue.lead_origin || '',
     lead_type: props.modelValue.lead_type || '',
+    property_country: props.modelValue.property_country || '',
+    property_city: props.modelValue.property_city || '',
+    property_region: props.modelValue.property_region || '',
+    property_project: props.modelValue.property_project || '',
+    property_bedrooms: props.modelValue.property_bedrooms || '',
+    property_bathrooms: props.modelValue.property_bathrooms || '',
+    property_min_price: props.modelValue.property_min_price || '',
+    property_max_price: props.modelValue.property_max_price || '',
   })
 }
 watch(() => props.show, (open) => { if (open) syncFromParent() })
@@ -280,7 +349,7 @@ const globalError   = ref('')
 const isGuest       = ref(false)
 const loading = reactive({ status:false, project:false, territory:false, lead_source:false, lead_origin:false, lead_type:false })
 const errors  = reactive({  status:'',  project:'',  territory:'',  lead_source:'',  lead_origin:'',  lead_type:''  })
-const opts    = reactive({  status:[],  project:[],  territory:[],  lead_source:[],  lead_origin:[],  lead_type:[]   })
+const opts    = reactive({  status:[],  project:[],  territory:[],  lead_source:[],  lead_origin:[],  lead_type:[]   ,    owner: [],    source: [],     origin: [],     type: []})
 const fieldHints = reactive({ last_contact_field:'', location_field:'', has_budget:false, has_space:false })
 
 /* Focus so Esc works */
@@ -288,6 +357,8 @@ const containerRef = ref(null)
 onMounted(() => {
   requestAnimationFrame(() => containerRef.value?.focus())
   seedFromProps()
+  opts.owner = props.ownerList || []
+  opts.lead_source = props.sourceList || []
   fetchAllOptions().finally(() => (globalLoading.value = false))
 })
 
