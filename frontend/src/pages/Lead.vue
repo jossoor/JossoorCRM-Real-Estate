@@ -38,110 +38,103 @@
   <div v-if="lead?.data" class="flex">
     <Tabs v-if="lead?.data?.name" as="div" v-model="tabIndex" :tabs="tabs">
       <template #tab-panel>
-        <!-- ================= Payment Plans tab ================= -->
-        <template v-if="isPaymentsTab">
-          <div class="p-4 space-y-4">
-            <div class="flex items-center justify-between">
-              <div class="text-lg font-semibold">
-                {{ __('Payment Plans') }}
-                <span v-if="hydratedPlans.length" class="text-sm opacity-60">({{ hydratedPlans.length }})</span>
+       <!-- ================= Payment Plans tab ================= -->
+<template v-if="isPaymentsTab">
+  <div class="p-4 space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="text-lg font-semibold">
+        {{ __('Payment Plans') }}
+        <span v-if="hydratedPlans.length" class="text-sm opacity-60">({{ hydratedPlans.length }})</span>
+      </div>
+      <Button
+        size="sm"
+        variant="solid"
+        @click="router.push({ name: 'PaymentPlan', query: { lead: lead.data.name, showHeader: '1' } })"
+      >
+        <template #prefix><FeatherIcon name="plus" class="h-4 w-4" /></template>
+        {{ __('Create Payment Plan') }}
+      </Button>
+    </div>
+ 
+    <div class="overflow-auto border rounded-lg">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th class="px-4 py-2 text-left">{{ __('Plan Name') }}</th>
+            <th class="px-4 py-2 text-right">{{ __('Total Amount') }}</th>
+            <th class="px-4 py-2 text-left">{{ __('Modified') }}</th>
+            <th class="px-4 py-2 text-left">{{ __('Owner') }}</th>
+            <th class="px-4 py-2 text-center">{{ __('Actions') }}</th>
+          </tr>
+        </thead>
+ 
+        <tbody>
+          <tr v-if="!paymentPlans.loading && !hydratedPlans.length">
+            <td colspan="5" class="px-4 py-6 text-center text-gray-500">
+              {{ __('No payment plans yet.') }}
+            </td>
+          </tr>
+ 
+          <tr v-else-if="paymentPlans.loading">
+            <td colspan="5" class="px-4 py-6 text-sm text-gray-500">
+              {{ __('Loading…') }}
+            </td>
+          </tr>
+ 
+          <tr
+            v-for="p in hydratedPlans"
+            :key="p.name"
+            class="border-t hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors"
+          >
+            <!-- PLAN NAME (strictly from plan_name/title) -->
+            <td class="px-4 py-2">
+              <div class="font-medium truncate" :title="displayPlanName(p)">
+                <button class="underline-offset-2 hover:underline" @click="openPaymentPlan(p.name)">
+                  {{ displayPlanName(p) }}
+                </button>
               </div>
+            </td>
+ 
+            <!-- TOTAL -->
+            <td class="px-4 py-2 text-right">
+              <span v-if="p.__amount != null">{{ formatAmount(p.__amount, p.__currency) }}</span>
+              <span v-else>—</span>
+            </td>
+ 
+            <!-- MODIFIED -->
+            <td class="px-4 py-2">
+              <span v-if="p.__modified" :title="p.__modified">{{ prettyDate(p.__modified) }}</span>
+              <span v-else>—</span>
+            </td>
+ 
+            <!-- OWNER -->
+            <td class="px-4 py-2">
+              <span :title="p.__owner || ''">{{ ownerShort(p.__owner) || '—' }}</span>
+            </td>
+ 
+            <!-- ACTIONS -->
+            <td class="px-4 py-2 text-center whitespace-nowrap">
+              <Button size="sm" @click="openPaymentPlan(p.name)">
+                <template #prefix><FeatherIcon name="external-link" class="h-4" /></template>
+                {{ __('Open') }}
+              </Button>
               <Button
                 size="sm"
-                variant="solid"
-                @click="router.push({ name: 'PaymentPlan', query: { lead: lead.data.name, showHeader: '1' } })"
+                variant="subtle"
+                theme="red"
+                class="ml-2"
+                @click="confirmDeletePaymentPlan(p.name)"
               >
-                <template #prefix><FeatherIcon name="plus" class="h-4 w-4" /></template>
-                {{ __('Create Payment Plan') }}
+                <template #prefix><FeatherIcon name="trash-2" class="h-4" /></template>
+                {{ __('Delete') }}
               </Button>
-            </div>
-
-            <div class="overflow-auto border rounded-lg">
-              <table class="min-w-full text-sm">
-                <thead class="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th class="px-4 py-2 text-left">{{ __('Plan Name') }}</th>
-                    <th class="px-4 py-2 text-right">{{ __('Total Amount') }}</th>
-                    <th class="px-4 py-2 text-left">{{ __('Modified') }}</th>
-                    <th class="px-4 py-2 text-left">{{ __('Owner') }}</th>
-                    <th class="px-4 py-2 text-center">{{ __('Actions') }}</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr v-if="!paymentPlans.loading && !hydratedPlans.length">
-                    <td colspan="5" class="px-4 py-6 text-center text-gray-500">
-                      {{ __('No payment plans yet.') }}
-                    </td>
-                  </tr>
-
-                  <tr v-else-if="paymentPlans.loading">
-                    <td colspan="5" class="px-4 py-6 text-sm text-gray-500">
-                      {{ __('Loading…') }}
-                    </td>
-                  </tr>
-
-                  <tr
-                    v-for="p in hydratedPlans"
-                    :key="p.name"
-                    class="border-t hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors"
-                  >
-                    <!-- PLAN NAME (strictly from plan_name/title; never show id unless both missing) -->
-                    <td class="px-4 py-2">
-                      <div class="font-medium truncate" :title="displayPlanName(p)">
-                        <button class="underline-offset-2 hover:underline" @click="openPaymentPlan(p.name)">
-                          {{ displayPlanName(p) }}
-                        </button>
-                      </div>
-                      <!-- If you do NOT want to show the internal id at all, remove the block below -->
-                      <div class="text-xs text-gray-500 flex items-center gap-2">
-                        <span class="truncate">{{ p.name }}</span>
-                        <button class="text-[11px] opacity-70 hover:opacity-100 underline" @click="copyToClipboard(p.name)">
-                          {{ __('copy') }}
-                        </button>
-                      </div>
-                    </td>
-
-                    <!-- TOTAL -->
-                    <td class="px-4 py-2 text-right">
-                      <span v-if="p.__amount != null">{{ formatAmount(p.__amount, p.__currency) }}</span>
-                      <span v-else>—</span>
-                    </td>
-
-                    <!-- MODIFIED -->
-                    <td class="px-4 py-2">
-                      <span v-if="p.__modified" :title="p.__modified">{{ prettyDate(p.__modified) }}</span>
-                      <span v-else>—</span>
-                    </td>
-
-                    <!-- OWNER -->
-                    <td class="px-4 py-2">
-                      <span :title="p.__owner || ''">{{ ownerShort(p.__owner) || '—' }}</span>
-                    </td>
-
-                    <!-- ACTIONS -->
-                    <td class="px-4 py-2 text-center whitespace-nowrap">
-                      <Button size="sm" @click="openPaymentPlan(p.name)">
-                        <template #prefix><FeatherIcon name="external-link" class="h-4" /></template>
-                        {{ __('Open') }}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="subtle"
-                        theme="red"
-                        class="ml-2"
-                        @click="confirmDeletePaymentPlan(p.name)"
-                      >
-                        <template #prefix><FeatherIcon name="trash-2" class="h-4" /></template>
-                        {{ __('Delete') }}
-                      </Button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
 
         <!-- ================= Data tab ================= -->
         <template v-else-if="isDataTab">
