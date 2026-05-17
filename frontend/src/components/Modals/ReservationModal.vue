@@ -24,7 +24,7 @@
             <div class="relative">
               <Input
                 v-model="leadInput"
-               :disabled="isEdit || !!props.seedLeadId"
+                :disabled="isEdit || !!props.seedLeadId"
                 :placeholder="__('Type to search Leads…')"
                 @focus="() => { if (!isEdit) { openDropdown('lead'); runLeadSearch(); } }"
                 @update:modelValue="onLeadInput"
@@ -103,7 +103,8 @@
           </div>
         </div>
 
-        <!-- Reservation -->
+
+        <!-- Reservation fee + date -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm mb-1">{{ __('Reservation Fee') }}</label>
@@ -152,33 +153,20 @@
             {{ __('Searching payment plans…') }}
           </p>
 
-          <!-- ── Professional alert: no payment plan found ── -->
           <div
             v-else-if="links.leadId && ppSearched && !ppOptions.length"
             class="mt-3 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700/50 dark:bg-amber-900/20"
           >
-            <!-- Icon -->
             <div class="mt-0.5 flex-shrink-0">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-amber-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
               </svg>
             </div>
-            <!-- Text -->
             <div class="flex-1">
-              <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                {{ __('No Payment Plan Found') }}
-              </p>
+              <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">{{ __('No Payment Plan Found') }}</p>
               <p class="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
                 {{ __('This lead has no payment plans yet. Please create a Payment Plan for this lead before making a reservation.') }}
               </p>
@@ -275,8 +263,8 @@
 import { ref, watch, computed } from 'vue'
 import { Button, Input, Select, call } from 'frappe-ui'
 
-const RESERVATION_DT = 'Reservation'
-const LEAD_DTX = ref('CRM Lead')
+const RESERVATION_DT  = 'Reservation'
+const LEAD_DTX        = ref('CRM Lead')
 const PAYMENT_PLAN_DT = 'Payment Plan'
 const PLAN_LEAD_FIELD = 'lead'
 
@@ -303,183 +291,147 @@ async function resolveReservationFields() {
     const doc = (message?.docs || []).find(d => d.doctype === 'DocType' && d.name === RESERVATION_DT) || message
     const F = doc?.fields || []
 
-    const inc = (s, a) => s && a.some(k => String(s).toLowerCase().includes(k))
-    const pick = (names, opts = []) =>
+    const inc    = (s, a) => s && a.some(k => String(s).toLowerCase().includes(k))
+    const pick   = (names, opts = []) =>
       (F.find(f => f.fieldtype === 'Link' && opts.includes(f.options))
       || F.find(f => names.some(n => inc(f.fieldname, [n]))))?.fieldname
-    const pickNum = (names) =>
-      (F.find(f => ['Int', 'Float', 'Currency'].includes(f.fieldtype) && names.some(n => inc(f.fieldname, [n]))) || {})
-        .fieldname
+    const pickNum  = (names) =>
+      (F.find(f => ['Int','Float','Currency'].includes(f.fieldtype) && names.some(n => inc(f.fieldname, [n]))) || {}).fieldname
     const pickData = (names) =>
       (F.find(f => names.some(n => inc(f.fieldname, [n]))) || {}).fieldname
 
-    RF.value.payment_plan = pick(['payment_plan','plan'],[PAYMENT_PLAN_DT]) || RF.value.payment_plan
-    RF.value.project      = pick(['project','real_estate_project'],['Real Estate Project','Project']) || RF.value.project
-    RF.value.unit         = pick(['project_unit','unit'],['Project Unit','Unit']) || RF.value.unit
-    RF.value.years        = pickNum(['years','tenure','tenor','duration']) || RF.value.years
-    RF.value.installments = pickNum(['number_of_installments','installments']) || RF.value.installments
-    RF.value.frequency    = pickData(['frequency','installment_frequency','payment_frequency']) || RF.value.frequency
-    RF.value.total_cost   = pickNum(['total_cost','total_amount','grand_total','total_price','total']) || RF.value.total_cost
+    RF.value.payment_plan     = pick(['payment_plan','plan'], [PAYMENT_PLAN_DT]) || RF.value.payment_plan
+    RF.value.project          = pick(['project','real_estate_project'], ['Real Estate Project','Project']) || RF.value.project
+    RF.value.unit             = pick(['project_unit','unit'], ['Project Unit','Unit']) || RF.value.unit
+    RF.value.years            = pickNum(['years','tenure','tenor','duration']) || RF.value.years
+    RF.value.installments     = pickNum(['number_of_installments','installments']) || RF.value.installments
+    RF.value.frequency        = pickData(['frequency','installment_frequency','payment_frequency']) || RF.value.frequency
+    RF.value.total_cost       = pickNum(['total_cost','total_amount','grand_total','total_price','total']) || RF.value.total_cost
     RF.value.reservation_fee  = pickNum(['reservation_fee','down_payment','advance']) || RF.value.reservation_fee
     RF.value.reservation_date = pickData(['reservation_date','booking_date']) || RF.value.reservation_date
-    RF.value.status       = pickData(['status']) || RF.value.status
-
-    RF.value.lead_name    = pickData(['lead_name','customer_name']) || RF.value.lead_name
-    RF.value.project_name = pickData(['project_name','project_title']) || RF.value.project_name
-    RF.value.unit_name    = pickData(['unit_name','unit_title','unit_number']) || RF.value.unit_name
+    RF.value.status           = pickData(['status']) || RF.value.status
+    RF.value.lead_name        = pickData(['lead_name','customer_name']) || RF.value.lead_name
+    RF.value.project_name     = pickData(['project_name','project_title']) || RF.value.project_name
+    RF.value.unit_name        = pickData(['unit_name','unit_title','unit_number']) || RF.value.unit_name
 
     Object.values(RF.value).forEach(k => { if (!(k in form.value)) form.value[k] = '' })
   } catch (e) {
     console.warn('[RsvModal] resolveReservationFields failed:', e)
   }
-
-  console.log('[RsvModal] RF after resolveReservationFields ->', JSON.parse(JSON.stringify(RF.value)))
 }
 
 const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  mode: { type: String, default: 'create' },
-  initial: { type: Object, default: null },
-  seedLeadId: { type: String, default: '' },
-  seedLeadLabel: { type: String, default: '' },
+  modelValue:  { type: Boolean, default: false },
+  mode:        { type: String,  default: 'create' },
+  initial:     { type: Object,  default: null },
+  seedLeadId:  { type: String,  default: '' },
+  seedLeadLabel:{ type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue','created','saved'])
 
 const modelValue = computed({
   get: () => props.modelValue,
-  set: v => emit('update:modelValue', v)
+  set: v => emit('update:modelValue', v),
 })
 const isEdit = computed(() => props.mode === 'edit')
 
-const form = ref({ doctype: RESERVATION_DT, name:'' })
+const form  = ref({ doctype: RESERVATION_DT, name: '' })
 const links = ref({
-  leadId:'',            // lead name
-  projectId:'',         // from plan
-  paymentPlanId:'',     // plan name
-  unitId:'',            // from plan
-  unitIsProjectUnit:false,
+  leadId: '',
+  projectId: '',
+  paymentPlanId: '',
+  unitId: '',
+  unitIsProjectUnit: false,
 })
 
 const errorMsg = ref('')
-const saving = ref(false)
+const saving   = ref(false)
 
 /* UI state */
-const leadInput = ref('')
+const leadInput    = ref('')
 const projectInput = ref('')
-const unitInput = ref('')
-const ppInput = ref('')
+const unitInput    = ref('')
+const ppInput      = ref('')
 
-const leadOptions = ref([])
+const leadOptions    = ref([])
 const projectOptions = ref([])
-const unitOptions = ref([])
-const ppOptions = ref([])
+const unitOptions    = ref([])
+const ppOptions      = ref([])
 
-const leadOpen = ref(false)
+const leadOpen    = ref(false)
 const projectOpen = ref(false)
-const unitOpen = ref(false)
-const ppOpen = ref(false)
+const unitOpen    = ref(false)
+const ppOpen      = ref(false)
 
-const leadPickedLabel = ref('')
+const leadPickedLabel    = ref('')
 const projectPickedLabel = ref('')
-const unitPickedLabel = ref('')
-const ppPickedLabel = ref('')
+const unitPickedLabel    = ref('')
+const ppPickedLabel      = ref('')
 
 const unitMetaPreview = ref(null)
 
 const project = computed(() => links.value.projectId || form.value[RF.value.project])
 
 const frequencyOptions = ref([
-  { label:'Monthly', value:'Monthly' },
+  { label:'Monthly',   value:'Monthly'   },
   { label:'Quarterly', value:'Quarterly' },
-  { label:'Biannual', value:'Biannual' },
-  { label:'Annual', value:'Annual' }
+  { label:'Biannual',  value:'Biannual'  },
+  { label:'Annual',    value:'Annual'    },
 ])
 
 const ppLoading  = ref(false)
 const ppSearched = ref(false)
 
 /* helpers */
-
-
 function debounce(fn, ms){ let t=null; return (...a)=>{ if(t) clearTimeout(t); t=setTimeout(()=>fn(...a), ms) } }
-const todayISO = () => new Date().toISOString().slice(0,10)
+const todayISO = () => new Date().toISOString().slice(0, 10)
 
 function openDropdown(which){
   leadOpen.value = projectOpen.value = unitOpen.value = ppOpen.value = false
-  if(which==='lead') leadOpen.value=true
-  if(which==='project') projectOpen.value=true
-  if(which==='unit') unitOpen.value=true
-  if(which==='pp') ppOpen.value=true
+  if (which==='lead')    leadOpen.value    = true
+  if (which==='project') projectOpen.value = true
+  if (which==='unit')    unitOpen.value    = true
+  if (which==='pp')      ppOpen.value      = true
 }
 
 /* clear helpers */
 function clearUnit(){
-  links.value.unitId = ''
-  unitPickedLabel.value = ''
-  unitInput.value = ''
+  links.value.unitId = ''; unitPickedLabel.value = ''; unitInput.value = ''
   if (RF.value.unit) form.value[RF.value.unit] = ''
-  unitMetaPreview.value = null
-  unitOpen.value = false
+  unitMetaPreview.value = null; unitOpen.value = false
 }
 function clearProject(){
-  links.value.projectId = ''
-  projectPickedLabel.value = ''
-  projectInput.value = ''
+  links.value.projectId = ''; projectPickedLabel.value = ''; projectInput.value = ''
   if (RF.value.project) form.value[RF.value.project] = ''
   projectOpen.value = false
 }
 function clearPaymentPlan(){
-  links.value.paymentPlanId = ''
-  ppPickedLabel.value = ''
-  ppInput.value = ''
+  links.value.paymentPlanId = ''; ppPickedLabel.value = ''; ppInput.value = ''
   if (RF.value.payment_plan) form.value[RF.value.payment_plan] = ''
-  clearUnit()
-  clearProject()
-  ppOptions.value = []
-  ppLoading.value = false
-  ppSearched.value = false
-  ppOpen.value = false
+  clearUnit(); clearProject()
+  ppOptions.value = []; ppLoading.value = false; ppSearched.value = false; ppOpen.value = false
 }
 function clearLead(){
-  links.value.leadId = ''
-  leadPickedLabel.value = ''
-  leadInput.value = ''
-  if (RF.value.lead) form.value[RF.value.lead] = ''
+  links.value.leadId = ''; leadPickedLabel.value = ''; leadInput.value = ''
+  if (RF.value.lead)      form.value[RF.value.lead]      = ''
   if (RF.value.lead_name) form.value[RF.value.lead_name] = ''
-  clearPaymentPlan()
-  leadOpen.value = false
-  leadOptions.value = []
+  clearPaymentPlan(); leadOpen.value = false; leadOptions.value = []
 }
-
-
 
 async function seedLeadFromProp() {
-  console.log('[SEED] running, id=', props.seedLeadId, 'label=', props.seedLeadLabel)
   if (!props.seedLeadId) return
-
   let label = props.seedLeadLabel || ''
-
   if (!label) {
     try {
-      const res = await call('frappe.client.get', {
-        doctype: LEAD_DTX.value,
-        name: props.seedLeadId,
-        fields: ['name', 'lead_name'],
-      })
+      const res = await call('frappe.client.get', { doctype: LEAD_DTX.value, name: props.seedLeadId, fields: ['name','lead_name'] })
       const doc = res?.message || res
       label = doc?.lead_name || doc?.name || props.seedLeadId
-      console.log('[SEED] fetched label from server:', label)
-    } catch (e) {
-      console.warn('[SEED] could not fetch lead label', e)
-      label = props.seedLeadId
-    }
+    } catch { label = props.seedLeadId }
   }
-
-  console.log('[SEED] calling pickLead with', { value: props.seedLeadId, label })
   await pickLead({ value: props.seedLeadId, label })
 }
+
 watch(() => props.modelValue, async (open) => {
-   console.log('🔴 WATCHER FIRED, open=', open, 'seedLeadId=', props.seedLeadId)
   if (!open) return
   errorMsg.value = ''; saving.value = false; openDropdown(null)
 
@@ -490,81 +442,61 @@ watch(() => props.modelValue, async (open) => {
     await hydrateFromServer(props.initial.name)
   } else {
     const blank = { doctype: RESERVATION_DT, name: '' }
-    Object.values(RF.value).forEach(k => {
-      blank[k] = (k === RF.value.frequency ? 'Monthly' : '')
-    })
+    Object.values(RF.value).forEach(k => { blank[k] = (k === RF.value.frequency ? 'Monthly' : '') })
     form.value = blank
     form.value[RF.value.reservation_date] = todayISO()
-    if (!form.value.name && !form.value[RF.value.status]) {
-      form.value[RF.value.status] = 'Reserved'
-    }
+    if (!form.value[RF.value.status]) form.value[RF.value.status] = 'Reserved'
 
     links.value = { leadId: '', projectId: '', paymentPlanId: '', unitId: '', unitIsProjectUnit: false }
     leadPickedLabel.value = projectPickedLabel.value = unitPickedLabel.value = ppPickedLabel.value = ''
     leadInput.value = projectInput.value = unitInput.value = ppInput.value = ''
     unitMetaPreview.value = null
 
-    // Seed lead from prop
-    console.log('[SEED] about to call seedLeadFromProp, seedLeadId=', props.seedLeadId)
-    if (props.seedLeadId) {
-      await seedLeadFromProp()
-    } else {
-      console.warn('[SEED] seedLeadId is empty!')
-    }
+    if (props.seedLeadId) await seedLeadFromProp()
   }
 })
 
-function closeAll(){ openDropdown(null); modelValue.value=false }
+function closeAll(){ openDropdown(null); modelValue.value = false }
 
 /* edit-mode load */
 async function hydrateFromServer(name){
-  const g = await call('frappe.client.get',{ doctype: RESERVATION_DT, name })
+  const g = await call('frappe.client.get', { doctype: RESERVATION_DT, name })
   const r = g?.message || g
-  if(!r?.name) throw new Error('Reservation not found')
+  if (!r?.name) throw new Error('Reservation not found')
 
   const seeded = { doctype: RESERVATION_DT, name: r.name }
-  Object.values(RF.value).forEach(fn=>{
-    if (r[fn] !== undefined && r[fn] !== null) seeded[fn] = r[fn]
-  })
+  Object.values(RF.value).forEach(fn => { if (r[fn] !== undefined && r[fn] !== null) seeded[fn] = r[fn] })
   form.value = Object.assign({}, form.value, seeded)
 
-  links.value.leadId        = r[RF.value.lead] || ''
-  links.value.projectId     = r[RF.value.project] || ''
+  links.value.leadId        = r[RF.value.lead]         || ''
+  links.value.projectId     = r[RF.value.project]      || ''
   links.value.paymentPlanId = r[RF.value.payment_plan] || ''
-  links.value.unitId        = r[RF.value.unit] || ''
+  links.value.unitId        = r[RF.value.unit]         || ''
   links.value.unitIsProjectUnit = false
 
-  leadPickedLabel.value = r[RF.value.lead_name] || r[RF.value.lead] || ''
+  leadPickedLabel.value    = r[RF.value.lead_name]    || r[RF.value.lead]    || ''
   projectPickedLabel.value = r[RF.value.project_name] || r[RF.value.project] || ''
-  unitPickedLabel.value = r[RF.value.unit_name] || r[RF.value.unit] || ''
-  ppPickedLabel.value = r[RF.value.payment_plan] || ''
+  unitPickedLabel.value    = r[RF.value.unit_name]    || r[RF.value.unit]    || ''
+  ppPickedLabel.value      = r[RF.value.payment_plan] || ''
 
-  leadInput.value = leadPickedLabel.value
+  leadInput.value    = leadPickedLabel.value
   projectInput.value = projectPickedLabel.value
-  unitInput.value = unitPickedLabel.value
-  ppInput.value = ppPickedLabel.value
+  unitInput.value    = unitPickedLabel.value
+  ppInput.value      = ppPickedLabel.value
 
   if (links.value.unitId) await fetchUnitMetaPreview()
-
-  console.log('[RsvModal] hydrateFromServer result ->', {
-    form: JSON.parse(JSON.stringify(form.value)),
-    links: JSON.parse(JSON.stringify(links.value)),
-  })
 }
 
 /* detect CRM Lead vs Lead */
 async function detectLeadDoctype() {
   try {
     const c1 = await call('frappe.client.get_count', { doctype: 'CRM Lead' })
-    const n1 = typeof c1?.message === 'number' ? c1.message : c1
-    if (n1 > 0) { LEAD_DTX.value = 'CRM Lead'; return }
+    if ((typeof c1?.message==='number' ? c1.message : c1) > 0) { LEAD_DTX.value = 'CRM Lead'; return }
   } catch {}
   try {
     const c2 = await call('frappe.client.get_count', { doctype: 'Lead' })
-    const n2 = typeof c2?.message === 'number' ? c2.message : c2
-    if (n2 > 0) { LEAD_DTX.value = 'Lead'; return }
+    if ((typeof c2?.message==='number' ? c2.message : c2) > 0) { LEAD_DTX.value = 'Lead'; return }
   } catch {}
-  console.log('[RsvModal] detectLeadDoctype ->', LEAD_DTX.value)
 }
 
 /* Lead search */
@@ -574,24 +506,19 @@ function onLeadInput(){
   if (!leadOpen.value) openDropdown('lead')
   debouncedLead()
 }
-const debouncedLead = debounce(async ()=>{ await runLeadSearch() }, 180)
+const debouncedLead = debounce(async () => { await runLeadSearch() }, 180)
 
 async function runLeadSearch() {
   if (isEdit.value) return
-  const mySeq = ++leadQuerySeq
-
+  const mySeq  = ++leadQuerySeq
   const txtRaw = String(leadInput.value || '').trim()
-  const txt = txtRaw || '%'
+  const txt    = txtRaw || '%'
   leadOpen.value = true
 
   try {
-    const r = await call('frappe.desk.search.search_link', {
-      doctype: LEAD_DTX.value,
-      txt,
-      page_length: 20,
-    })
+    const r = await call('frappe.desk.search.search_link', { doctype: LEAD_DTX.value, txt, page_length: 20 })
     if (mySeq !== leadQuerySeq) return
-    const results = (r?.results || r?.message || r || [])
+    const results = r?.results || r?.message || r || []
     if (Array.isArray(results) && results.length) {
       leadOptions.value = results.map(it => ({
         value: it.value,
@@ -600,23 +527,18 @@ async function runLeadSearch() {
       }))
       return
     }
-  } catch (e) {
-    console.warn('[RsvModal] search_link failed, fallback. err=', e)
-  }
+  } catch {}
 
   try {
     const res = await call('frappe.client.get_list', {
       doctype: LEAD_DTX.value,
-      fields: ['name', 'lead_name', 'company_name', 'email_id', 'mobile_no'],
+      fields: ['name','lead_name','company_name','email_id','mobile_no'],
       or_filters: [
-        ['name', 'like', `%${txtRaw}%`],
-        ['lead_name', 'like', `%${txtRaw}%`],
-        ['company_name', 'like', `%${txtRaw}%`],
-        ['email_id', 'like', `%${txtRaw}%`],
-        ['mobile_no', 'like', `%${txtRaw}%`],
+        ['name','like',`%${txtRaw}%`], ['lead_name','like',`%${txtRaw}%`],
+        ['company_name','like',`%${txtRaw}%`], ['email_id','like',`%${txtRaw}%`],
+        ['mobile_no','like',`%${txtRaw}%`],
       ],
-      limit_page_length: 20,
-      order_by: 'modified desc',
+      limit_page_length: 20, order_by: 'modified desc',
     })
     const arr = Array.isArray(res?.message) ? res.message : (Array.isArray(res) ? res : [])
     if (mySeq !== leadQuerySeq) return
@@ -627,482 +549,295 @@ async function runLeadSearch() {
     }))
   } catch(e) {
     if (mySeq !== leadQuerySeq) return
-    console.error('[RsvModal] runLeadSearch fallback failed:', e)
-    leadOptions.value = []
-    leadOpen.value = false
+    leadOptions.value = []; leadOpen.value = false
   }
 }
 
 async function pickLead(opt){
-  links.value.leadId = opt?.value || ''
-  leadPickedLabel.value = opt?.label || opt?.value || ''
-  leadInput.value = leadPickedLabel.value
-
-  if (RF.value.lead) form.value[RF.value.lead] = links.value.leadId
+  links.value.leadId       = opt?.value || ''
+  leadPickedLabel.value    = opt?.label || opt?.value || ''
+  leadInput.value          = leadPickedLabel.value
+  if (RF.value.lead)      form.value[RF.value.lead]      = links.value.leadId
   if (RF.value.lead_name) form.value[RF.value.lead_name] = leadPickedLabel.value
-
-  clearPaymentPlan()
-  clearProject()
-  clearUnit()
-
+  clearPaymentPlan(); clearProject(); clearUnit()
   leadOpen.value = false
-
-  console.log('[RsvModal] pickLead ->', {
-    leadId: links.value.leadId,
-    leadLabel: leadPickedLabel.value,
-  })
-
   await runPaymentPlanSearch()
 }
 
 /* Payment Plan search */
-const debouncedPP = debounce(()=>runPaymentPlanSearch(), 180)
+const debouncedPP = debounce(() => runPaymentPlanSearch(), 180)
 
 async function runPaymentPlanSearch() {
   if (!links.value.leadId) {
-    ppOptions.value = []
-    ppOpen.value = false
-    ppLoading.value = false
-    ppSearched.value = false
-    console.log('[RsvModal] runPaymentPlanSearch abort: no leadId')
-    return
+    ppOptions.value = []; ppOpen.value = false; ppLoading.value = false; ppSearched.value = false; return
   }
-
-  ppOpen.value = true
-  ppLoading.value = true
-  ppSearched.value = false
-
+  ppOpen.value = true; ppLoading.value = true; ppSearched.value = false
   const typedText = String(ppInput.value || '').trim()
-
-  console.log('[RsvModal] runPaymentPlanSearch START ->', {
-    PAYMENT_PLAN_DT,
-    PLAN_LEAD_FIELD,
-    leadId: links.value.leadId,
-    typedText,
-  })
-
   try {
-    const fieldsToFetch = [
-      'name',
-      'plan_name',
-      PLAN_LEAD_FIELD, // lead
-      'frequency',
-      'years',
-      'total_price',
-    ]
-
-    const filters = [
-      ['docstatus', '<', 2],
-      [PLAN_LEAD_FIELD, '=', links.value.leadId],
-    ]
-
-    const or_filters = []
-    if (typedText) {
-      or_filters.push(['name', 'like', `%${typedText}%`])
-      or_filters.push(['plan_name', 'like', `%${typedText}%`])
-    }
-
+    const filters    = [['docstatus','<',2],[PLAN_LEAD_FIELD,'=',links.value.leadId]]
+    const or_filters = typedText
+      ? [['name','like',`%${typedText}%`],['plan_name','like',`%${typedText}%`]]
+      : []
     const res = await call('frappe.client.get_list', {
       doctype: PAYMENT_PLAN_DT,
-      fields: fieldsToFetch,
+      fields: ['name','plan_name',PLAN_LEAD_FIELD,'frequency','years','total_price'],
       filters,
       ...(or_filters.length ? { or_filters } : {}),
-      limit_page_length: 50,
-      order_by: 'modified desc',
+      limit_page_length: 50, order_by: 'modified desc',
     })
-
     const rows = Array.isArray(res?.message) ? res.message : (Array.isArray(res) ? res : [])
-    console.log('[RsvModal] runPaymentPlanSearch rows ->', rows)
-
-    const opts = rows.map(row => {
+    ppOptions.value = rows.map(row => {
       const pieces = []
       if (row.frequency) pieces.push(row.frequency)
       if (row.years != null) pieces.push(`${row.years} yrs`)
       if (row.total_price != null) pieces.push(`${row.total_price}`)
-      return {
-        value: row.name,
-        label: row.plan_name || row.name,
-        sublabel: pieces.join(' • ')
-      }
+      return { value: row.name, label: row.plan_name || row.name, sublabel: pieces.join(' • ') }
     })
-
-    console.log('[RsvModal] runPaymentPlanSearch mapped opts ->', opts)
-
-    ppOptions.value = opts
-
-    // Auto-select the most recent plan (first in list, ordered by modified desc)
-    // Always auto-pick when the modal opens fresh and no plan is selected yet
-    if (!links.value.paymentPlanId && ppOptions.value.length >= 1) {
-      await pickPaymentPlan(ppOptions.value[0])
-    }
-
+    if (!links.value.paymentPlanId && ppOptions.value.length >= 1) await pickPaymentPlan(ppOptions.value[0])
     ppSearched.value = true
-  } catch(e) {
-    console.error('[RsvModal] runPaymentPlanSearch ERROR:', e)
-    ppOptions.value = []
-    ppSearched.value = true
+  } catch {
+    ppOptions.value = []; ppSearched.value = true
   } finally {
     ppLoading.value = false
-    console.log('[RsvModal] runPaymentPlanSearch END')
   }
 }
 
-/* pickPaymentPlan */
 async function pickPaymentPlan(opt){
-  // 1. basic selection UI
   links.value.paymentPlanId = opt?.value || ''
-  ppPickedLabel.value = opt?.label || ''
-  ppInput.value = ppPickedLabel.value
-
-  if (RF.value.payment_plan) {
-    form.value[RF.value.payment_plan] = links.value.paymentPlanId
-  }
-
-  console.log('[RsvModal] pickPaymentPlan picked ->', {
-    planId: links.value.paymentPlanId,
-    label: ppPickedLabel.value,
-  })
+  ppPickedLabel.value       = opt?.label || ''
+  ppInput.value             = ppPickedLabel.value
+  if (RF.value.payment_plan) form.value[RF.value.payment_plan] = links.value.paymentPlanId
 
   try {
-    // 2. fetch full plan doc
-    const g = await call('frappe.client.get', {
-      doctype: PAYMENT_PLAN_DT,
-      name: links.value.paymentPlanId
-    })
+    const g    = await call('frappe.client.get', { doctype: PAYMENT_PLAN_DT, name: links.value.paymentPlanId })
     const plan = g?.message || g || {}
-    console.log('[RsvModal] pickPaymentPlan plan doc ->', plan)
 
-    // ---- MONEY / SCHEDULE FIELDS ----
-    if (plan.total_price != null && RF.value.total_cost) {
-      form.value[RF.value.total_cost] = plan.total_price
-    }
-    if (plan.frequency && RF.value.frequency) {
-      form.value[RF.value.frequency] = plan.frequency
-      if (!frequencyOptions.value.find(o => o.value === plan.frequency)) {
-        frequencyOptions.value.push({ label: plan.frequency, value: plan.frequency })
-      }
-    }
-    if (plan.years != null && RF.value.years) {
-      form.value[RF.value.years] = plan.years
-    }
-    if (plan.number_of_installments != null && RF.value.installments) {
-      form.value[RF.value.installments] = plan.number_of_installments
-    }
+    if (plan.total_price != null && RF.value.total_cost)    form.value[RF.value.total_cost]    = plan.total_price
+    if (plan.frequency       && RF.value.frequency)         form.value[RF.value.frequency]     = plan.frequency
+    if (plan.years      != null && RF.value.years)          form.value[RF.value.years]          = plan.years
+    if (plan.number_of_installments != null && RF.value.installments)
+                                                            form.value[RF.value.installments]  = plan.number_of_installments
 
-    // ---- STEP A: Try direct project / unit on the plan itself ----
-    let planProjectVal =
-      plan.project_name ||
-      plan.project ||
-      plan.real_estate_project ||
-      plan.project_id ||
-      ''
+    if (plan.frequency && !frequencyOptions.value.find(o => o.value === plan.frequency))
+      frequencyOptions.value.push({ label: plan.frequency, value: plan.frequency })
 
-    let planUnitVal =
-      plan.unit_name ||
-      plan.unit ||
-      plan.unit_id ||
-      plan.project_unit ||
-      ''
+    let planProjectVal = plan.project_name || plan.project || plan.real_estate_project || plan.project_id || ''
+    let planUnitVal    = plan.unit_name    || plan.unit    || plan.unit_id || plan.project_unit || ''
 
-    // ---- STEP B: If still missing, try to infer from other fields on the plan ----
-    // Heuristic: look for any single-link-ish field that smells like a Unit
     if (!planUnitVal) {
       for (const [key, val] of Object.entries(plan)) {
-        if (!val) continue
-        // skip obvious meta fields
-        if (['name','owner','creation','modified','modified_by','doctype','docstatus'].includes(key)) continue
-        // guessy match: if key contains 'unit' or 'property' and it's a string id, take it
-        if (typeof val === 'string' && /unit|property/i.test(key)) {
-          planUnitVal = val
-          console.log('[RsvModal] inferred unit from field', key, '->', val)
-          break
-        }
+        if (!val || ['name','owner','creation','modified','modified_by','doctype','docstatus'].includes(key)) continue
+        if (typeof val === 'string' && /unit|property/i.test(key)) { planUnitVal = val; break }
       }
     }
-
-    // If we got a unit but still no project, try fetching that unit doc to pull its project
     if (planUnitVal && !planProjectVal) {
-      // try both doctypes just like fetchUnitMetaPreview does
-      const tryDoctypes = ['Project Unit', 'Unit']
-      for (const dt of tryDoctypes) {
+      for (const dt of ['Project Unit','Unit']) {
         try {
-          const ug = await call('frappe.client.get', { doctype: dt, name: planUnitVal })
+          const ug   = await call('frappe.client.get', { doctype: dt, name: planUnitVal })
           const udoc = ug?.message || ug || {}
-          if (udoc) {
-            planProjectVal =
-              udoc.project ||
-              udoc.project_name ||
-              udoc.real_estate_project ||
-              udoc.project_id ||
-              planProjectVal
-            console.log('[RsvModal] inferred project from unit doc', dt, '->', planProjectVal)
-          }
-          break
-        } catch (err) {
-          // swallow and try next dt
-        }
+          planProjectVal = udoc.project || udoc.project_name || udoc.real_estate_project || udoc.project_id || ''
+          if (planProjectVal) break
+        } catch {}
       }
     }
 
-    // ---- STEP C: write project into modal if we found one ----
     if (planProjectVal && RF.value.project) {
-      links.value.projectId = planProjectVal
-      projectPickedLabel.value = planProjectVal
-      projectInput.value = planProjectVal
-
+      links.value.projectId = planProjectVal; projectPickedLabel.value = planProjectVal; projectInput.value = planProjectVal
       form.value[RF.value.project] = planProjectVal
-      if (RF.value.project_name) {
-        form.value[RF.value.project_name] = planProjectVal
-      }
+      if (RF.value.project_name) form.value[RF.value.project_name] = planProjectVal
     }
-
-    // ---- STEP D: write unit into modal if we found one ----
     if (planUnitVal && RF.value.unit) {
-      links.value.unitId = planUnitVal
-      links.value.unitIsProjectUnit = false
-
-      unitPickedLabel.value = planUnitVal
-      unitInput.value = planUnitVal
-
+      links.value.unitId = planUnitVal; links.value.unitIsProjectUnit = false
+      unitPickedLabel.value = planUnitVal; unitInput.value = planUnitVal
       form.value[RF.value.unit] = planUnitVal
-      if (RF.value.unit_name) {
-        form.value[RF.value.unit_name] = planUnitVal
-      }
-
+      if (RF.value.unit_name) form.value[RF.value.unit_name] = planUnitVal
       await fetchUnitMetaPreview()
     }
-
-    console.log('[RsvModal] after apply from plan ->', {
-      form: JSON.parse(JSON.stringify(form.value)),
-      links: JSON.parse(JSON.stringify(links.value)),
-      projectPickedLabel: projectPickedLabel.value,
-      unitPickedLabel: unitPickedLabel.value,
-    })
-
   } catch (e) {
     console.error('[RsvModal] pickPaymentPlan hydrate FAILED:', e)
   }
-
   ppOpen.value = false
 }
 
-/* search stubs for project/unit */
-const debouncedProject = debounce(()=>runProjectSearch(), 200)
-const debouncedUnit    = debounce(()=>runUnitSearch(), 200)
+const debouncedProject = debounce(() => runProjectSearch(), 200)
+const debouncedUnit    = debounce(() => runUnitSearch(),    200)
 async function runProjectSearch(){ /* TODO */ }
-async function runUnitSearch(){ /* TODO */ }
+async function runUnitSearch(){    /* TODO */ }
 
-/* unit preview */
 async function fetchUnitMetaPreview(){
-  unitMetaPreview.value=null
-  if(!links.value.unitId) return
-
-  const tryDoctypes = ['Project Unit','Unit']
-
-  for (const dt of tryDoctypes) {
+  unitMetaPreview.value = null
+  if (!links.value.unitId) return
+  for (const dt of ['Project Unit','Unit']) {
     try {
-      const g = await call('frappe.client.get',{ doctype: dt, name: links.value.unitId })
+      const g = await call('frappe.client.get', { doctype: dt, name: links.value.unitId })
       const u = g?.message || g || {}
       unitMetaPreview.value = {
-        project: u.project || u.project_name || '',
-        property_type: u.property_type || u.type || '',
-        property_location: u.property_location || u.location || u.city || '',
-        developer: u.developer || u.developer_name || '',
-        bedrooms: u.bedrooms || u.bed_room || '',
-        bathrooms: u.bathrooms || u.bath_room || '',
-        area: u.area || u.built_up_area || u.size || '',
-        price_display: u.price || u.base_price || u.list_price || '',
+        project:           u.project        || u.project_name   || '',
+        property_type:     u.property_type  || u.type           || '',
+        property_location: u.property_location || u.location    || u.city || '',
+        developer:         u.developer      || u.developer_name || '',
+        bedrooms:          u.bedrooms       || u.bed_room       || '',
+        bathrooms:         u.bathrooms      || u.bath_room      || '',
+        area:              u.area           || u.built_up_area  || u.size || '',
+        price_display:     u.price          || u.base_price     || u.list_price || '',
       }
-      console.log('[RsvModal] fetchUnitMetaPreview success from', dt, '->', unitMetaPreview.value)
       break
-    } catch(err) {
-      console.warn('[RsvModal] fetchUnitMetaPreview failed for', dt, 'with name=', links.value.unitId, err)
-    }
+    } catch {}
   }
 }
 
-/* save/create */
+/* ---------- save / create ---------- */
+
+// Expected Closure Date is silently auto-filled — no user validation needed
+
 async function buildNonLinkDiff(latest){
-  const diff={}
-  try{
-    const { message }=await call('frappe.desk.form.load.getdoctype',{ doctype: RESERVATION_DT })
-    const doc=(message?.docs||[]).find(d=>d.doctype==='DocType'&&d.name===RESERVATION_DT)||message
-    const F=doc?.fields||[]
-    for(const f of F){
-      const name=f.fieldname; if(!name) continue
+  const diff = {}
+  try {
+    const { message } = await call('frappe.desk.form.load.getdoctype', { doctype: RESERVATION_DT })
+    const doc = (message?.docs||[]).find(d=>d.doctype==='DocType'&&d.name===RESERVATION_DT)||message
+    const F   = doc?.fields || []
+    for (const f of F) {
+      const name = f.fieldname; if (!name) continue
       if (['Link','Dynamic Link','Table'].includes(f.fieldtype)) continue
       if (!(name in form.value)) continue
-      const newVal=form.value[name]
-      const oldVal=latest[name]
+      const newVal = form.value[name]; const oldVal = latest[name]
       if (newVal === '' || newVal === undefined) continue
-      if (JSON.stringify(newVal)!==JSON.stringify(oldVal)) diff[name]=newVal
+      if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) diff[name] = newVal
     }
-  }catch(e){
-    console.warn('[RsvModal] buildNonLinkDiff failed:', e)
-  }
+  } catch(e) { console.warn('[RsvModal] buildNonLinkDiff failed:', e) }
   return diff
 }
 
 async function findReservationLinkTargets(){
-  const targets={
-    lead: RF.value.lead||'lead',
-    payment_plan: null,
-    project: null,
-    unit: null,
-    project_unit: null,
-    unit_links_to:'Unit'
-  }
-  try{
-    const { message }=await call('frappe.desk.form.load.getdoctype',{ doctype: RESERVATION_DT })
-    const doc=(message?.docs||[]).find(d=>d.doctype==='DocType'&&d.name===RESERVATION_DT)||message
-    const F=doc?.fields||[]
-
-    const byOpts=(opts)=>F.find(f=>f.fieldtype==='Link'&&opts.includes(f.options))
-    const pp=byOpts([PAYMENT_PLAN_DT])
-    const pr=byOpts(['Real Estate Project','Project'])
-    const pu=byOpts(['Project Unit'])
-    const u=byOpts(['Unit'])||F.find(f=>f.fieldtype==='Link'&&f.fieldname==='unit')
-
-    targets.payment_plan=(pp&&pp.fieldname)||'payment_plan'
-    targets.project=(pr&&pr.fieldname)||'project'
-    targets.project_unit=pu?pu.fieldname:null
-    targets.unit=(u&&u.fieldname)||'unit'
-    if(u?.options) targets.unit_links_to=u.options
-
-    const lf=byOpts([LEAD_DTX.value,'Lead','CRM Lead'])
-    if(lf?.fieldname) targets.lead=lf.fieldname
-  }catch(e){
-    console.warn('[RsvModal] findReservationLinkTargets failed:', e)
-  }
-
-  console.log('[RsvModal] findReservationLinkTargets ->', targets)
+  const targets = { lead: RF.value.lead||'lead', payment_plan:null, project:null, unit:null, project_unit:null, unit_links_to:'Unit' }
+  try {
+    const { message } = await call('frappe.desk.form.load.getdoctype', { doctype: RESERVATION_DT })
+    const doc = (message?.docs||[]).find(d=>d.doctype==='DocType'&&d.name===RESERVATION_DT)||message
+    const F   = doc?.fields || []
+    const byOpts = (opts) => F.find(f=>f.fieldtype==='Link'&&opts.includes(f.options))
+    const pp = byOpts([PAYMENT_PLAN_DT])
+    const pr = byOpts(['Real Estate Project','Project'])
+    const pu = byOpts(['Project Unit'])
+    const u  = byOpts(['Unit']) || F.find(f=>f.fieldtype==='Link'&&f.fieldname==='unit')
+    targets.payment_plan  = (pp&&pp.fieldname)||'payment_plan'
+    targets.project       = (pr&&pr.fieldname)||'project'
+    targets.project_unit  = pu ? pu.fieldname : null
+    targets.unit          = (u&&u.fieldname)||'unit'
+    if (u?.options) targets.unit_links_to = u.options
+    const lf = byOpts([LEAD_DTX.value,'Lead','CRM Lead'])
+    if (lf?.fieldname) targets.lead = lf.fieldname
+  } catch(e) { console.warn('[RsvModal] findReservationLinkTargets failed:', e) }
   return targets
 }
 
 async function save(){
-  errorMsg.value=''
-  if(!form.value.name){
-    errorMsg.value=__('Missing reservation name'); return
-  }
+  errorMsg.value = ''
+  if (!form.value.name) { errorMsg.value = __('Missing reservation name'); return }
 
-  saving.value=true
-  try{
-    const latestRes = await call('frappe.client.get',{ doctype: RESERVATION_DT, name: form.value.name })
-    const latest = latestRes?.message || latestRes
-    if(!latest?.name) throw new Error('Record not found')
+  saving.value = true
+  try {
+    const latestRes = await call('frappe.client.get', { doctype: RESERVATION_DT, name: form.value.name })
+    const latest    = latestRes?.message || latestRes
+    if (!latest?.name) throw new Error('Record not found')
 
     const targets = await findReservationLinkTargets()
     const nonLink = await buildNonLinkDiff(latest)
 
-    const sticky = [
-      RF.value.status,
-      RF.value.frequency,
-      RF.value.reservation_date,
-      RF.value.total_cost,
-      RF.value.years,
-      RF.value.installments
-    ].filter(Boolean)
-    for(const k of sticky){
-      if(k in form.value){
+    const sticky = [RF.value.status, RF.value.frequency, RF.value.reservation_date, RF.value.total_cost, RF.value.years, RF.value.installments].filter(Boolean)
+    for (const k of sticky) {
+      if (k in form.value) {
         const nv=form.value[k], ov=latest[k]
-        if(nv!=='' && JSON.stringify(nv)!==JSON.stringify(ov)) nonLink[k]=nv
+        if (nv!=='' && JSON.stringify(nv)!==JSON.stringify(ov)) nonLink[k]=nv
       }
     }
 
+    // Auto-fill expected_closure_date silently so the backend Deal creation doesn't throw MandatoryError
+    if (form.value[RF.value.status] === 'Deal Done') {
+      nonLink['expected_closure_date'] = todayISO()
+    }
+
     const linkPairs = [
-      [targets.lead, links.value.leadId, LEAD_DTX.value],
-      [targets.payment_plan||'payment_plan', links.value.paymentPlanId, PAYMENT_PLAN_DT],
-      [targets.project||'project', links.value.projectId, 'Real Estate Project'],
+      [targets.lead,                              links.value.leadId,         LEAD_DTX.value],
+      [targets.payment_plan||'payment_plan',      links.value.paymentPlanId,  PAYMENT_PLAN_DT],
+      [targets.project||'project',                links.value.projectId,      'Real Estate Project'],
     ]
 
-    const entries=[]
-    for(const [k,v] of Object.entries(nonLink)) entries.push([k,v])
-
-    for(const [field, id] of linkPairs){
-      if(!field) continue
-      const cur = latest[field] || ''
+    const entries = []
+    for (const [k, v] of Object.entries(nonLink)) entries.push([k, v])
+    for (const [field, id] of linkPairs) {
+      if (!field) continue
+      const cur     = latest[field] || ''
       const desired = id || ''
       if (desired && desired !== cur) entries.push([field, desired])
     }
 
-    const unitField = targets.unit || 'unit'
-    const curUnit = latest[unitField] || ''
+    const unitField   = targets.unit || 'unit'
+    const curUnit     = latest[unitField] || ''
     const desiredUnit = links.value.unitId || ''
     if (desiredUnit && desiredUnit !== curUnit) entries.push([unitField, desiredUnit])
 
-    console.log('[RsvModal] save() entries to update ->', entries)
+    if (!entries.length) { emit('saved', latest); modelValue.value = false; return }
 
-    if(!entries.length){
-      emit('saved', latest)
-      modelValue.value=false
-      return
+    for (const [fieldname, value] of entries) {
+      await call('frappe.client.set_value', { doctype: RESERVATION_DT, name: form.value.name, fieldname, value })
     }
 
-    for(const [fieldname, value] of entries){
-      await call('frappe.client.set_value',{ doctype: RESERVATION_DT, name: form.value.name, fieldname, value })
-    }
-
-    const freshRes = await call('frappe.client.get',{ doctype: RESERVATION_DT, name: form.value.name })
-    const fresh = freshRes?.message || freshRes
-
-    console.log('[RsvModal] save() fresh ->', fresh)
-
+    const freshRes = await call('frappe.client.get', { doctype: RESERVATION_DT, name: form.value.name })
+    const fresh    = freshRes?.message || freshRes
     emit('saved', fresh)
-    modelValue.value=false
-  }catch(e){
+    modelValue.value = false
+  } catch(e) {
     console.error('[RsvModal] save() failed:', e)
     errorMsg.value = extractServerMessage(e) || __('Could not save reservation')
-  }finally{
-    saving.value=false
+  } finally {
+    saving.value = false
   }
 }
 
 async function create(){
-  errorMsg.value=''
-  if(!links.value.leadId){
-    errorMsg.value=__('Please select a CRM Lead'); return
-  }
-  if(!form.value[RF.value.reservation_date]) form.value[RF.value.reservation_date]=todayISO()
+  errorMsg.value = ''
+  if (!links.value.leadId) { errorMsg.value = __('Please select a CRM Lead'); return }
 
-  saving.value=true
-  try{
+  if (!form.value[RF.value.reservation_date]) form.value[RF.value.reservation_date] = todayISO()
+
+  saving.value = true
+  try {
     const targets = await findReservationLinkTargets()
-    const base={ doctype: RESERVATION_DT }
-
+    const base    = { doctype: RESERVATION_DT }
     const nonLink = await buildNonLinkDiff({})
     Object.assign(base, nonLink)
 
-    base[targets.lead]=links.value.leadId
-    if(links.value.paymentPlanId) base[targets.payment_plan||'payment_plan']=links.value.paymentPlanId
-    if(links.value.projectId) base[targets.project||'project']=links.value.projectId
-    if(links.value.unitId) base[targets.unit||'unit']=links.value.unitId
+    base[targets.lead] = links.value.leadId
+    if (links.value.paymentPlanId) base[targets.payment_plan||'payment_plan'] = links.value.paymentPlanId
+    if (links.value.projectId)     base[targets.project||'project']           = links.value.projectId
+    if (links.value.unitId)        base[targets.unit||'unit']                 = links.value.unitId
 
-    console.log('[RsvModal] create() base ->', base)
+    // Auto-fill expected_closure_date silently so the backend Deal creation doesn't throw MandatoryError
+    if (form.value[RF.value.status] === 'Deal Done') {
+      base['expected_closure_date'] = todayISO()
+    }
 
-    const inserted = await call('frappe.client.insert',{ doc: base })
+    const inserted    = await call('frappe.client.insert', { doc: base })
     const reservation = inserted?.message || inserted
-
-    console.log('[RsvModal] create() inserted ->', reservation)
-
     emit('created', reservation)
-    modelValue.value=false
-  }catch(e){
+    modelValue.value = false
+  } catch(e) {
     console.error('[RsvModal] create() failed:', e)
     errorMsg.value = extractServerMessage(e) || __('Could not create reservation')
-  }finally{
-    saving.value=false
+  } finally {
+    saving.value = false
   }
 }
 
 function extractServerMessage(e){
-  try{
-    if(e?._server_messages){
-      const arr=JSON.parse(e._server_messages)
-      if(Array.isArray(arr)&&arr.length){
-        try{ return JSON.parse(arr[0]).message||arr[0] }catch{ return arr[0] }
+  try {
+    if (e?._server_messages) {
+      const arr = JSON.parse(e._server_messages)
+      if (Array.isArray(arr) && arr.length) {
+        try { return JSON.parse(arr[0]).message || arr[0] } catch { return arr[0] }
       }
     }
-  }catch{}
+  } catch {}
   return e?.message || e?._error_message || (e?.exc && String(e.exc)) || ''
 }
 </script>
