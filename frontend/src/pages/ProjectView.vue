@@ -422,7 +422,7 @@ const infoItems = computed(() => {
   return [
     { label: __('Status'),                 value: p.status },
     { label: __('Exclusivity'),            value: p.exclusivity || '—' },
-    { label: __('Company'),                value: p.company || '—' },
+ //   { label: __('Company'),                value: p.company || '—' },
     { label: __('Developer'),              value: p.developer },
     { label: __('Marketing Campaign'),     value: p.marketing_campaign || '—' },
     { label: __('Location (URL)'),         value: p.location },

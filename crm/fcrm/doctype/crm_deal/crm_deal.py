@@ -227,11 +227,12 @@ class CRMDeal(Document):
 		self.update_closed_date()
 		self.update_default_probability()
 		self.update_expected_deal_value()
+		# Expected Closure Date is no longer mandatory — removed the requirement
+		# so that deals created automatically from reservations (Deal Done status)
+		# do not throw MandatoryError when the field is not supplied.
 		if frappe.db.get_single_value("FCRM Settings", "enable_forecasting"):
 			if not self.expected_deal_value or self.expected_deal_value == 0:
 				frappe.throw(_("Expected Deal Value is required."), frappe.MandatoryError)
-			if not self.expected_closure_date:
-				frappe.throw(_("Expected Closure Date is required."), frappe.MandatoryError)
 
 	def validate_lost_reason(self):
 		"""
