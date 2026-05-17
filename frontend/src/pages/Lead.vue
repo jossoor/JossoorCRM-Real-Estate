@@ -103,7 +103,7 @@
  
             <!-- MODIFIED -->
             <td class="px-4 py-2">
-              <span v-if="p.__modified" :title="p.__modified">{{ prettyDate(p.__modified) }}</span>
+              <span v-if="p.__modified" :title="p.__modified">{{ formatModifiedDate(p.__modified) }}</span>
               <span v-else>—</span>
             </td>
  
@@ -135,6 +135,7 @@
     </div>
   </div>
 </template>
+
 
         <!-- ================= Data tab ================= -->
         <template v-else-if="isDataTab">
@@ -848,6 +849,12 @@ function reloadAssignees(data) {
     assignees.reload()
   }
 }
+
+function formatModifiedDate(timestamp) {
+  if (!timestamp) return '—';
+  return timestamp.split('.')[0].slice(0, 16);
+}
+
 </script>
 
 <style scoped>
