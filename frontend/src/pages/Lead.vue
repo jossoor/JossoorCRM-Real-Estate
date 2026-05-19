@@ -304,6 +304,33 @@
 
   <DeleteLinkedDocModal v-if="showDeleteLinkedDocModal" v-model="showDeleteLinkedDocModal" :doctype="'CRM Lead'" :docname="props.leadId" name="Leads" />
 
+  <Dialog v-model="showDeletePlanModal" :options="{ size: 'sm' }">
+    <template #body>
+      <div class="bg-surface-modal p-5">
+        <div class="mb-4">
+          <h3 class="text-lg leading-6 font-semibold text-ink-gray-9">
+            {{ __('Delete Payment Plan') }}
+          </h3>
+        </div>
+        <div class="text-sm text-ink-gray-5">
+          {{ __('Are you sure you want to delete this Payment Plan? This action cannot be undone.') }}
+        </div>
+        <div class="flex justify-end gap-2 mt-6">
+          <Button variant="subtle" @click="showDeletePlanModal = false">
+            {{ __('Cancel') }}
+          </Button>
+          <Button
+            variant="solid"
+            theme="red"
+            @click="handleConfirmDeletePlan"
+          >
+            {{ __('Delete') }}
+          </Button>
+        </div>
+      </div>
+    </template>
+  </Dialog>
+
   <!-- NEW: Reservation create modal (prefilled with this lead) -->
   <ReservationModal
     v-if="lead.data?.name"
@@ -368,7 +395,7 @@ import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
 import { useDocument } from '@/data/document'
 import { whatsappEnabled, callEnabled } from '@/composables/settings'
-import { createResource, FileUploader, Dropdown, Tooltip, Avatar, Tabs, Breadcrumbs, call, usePageMeta, toast } from 'frappe-ui'
+import { createResource, FileUploader, Dropdown, Tooltip, Avatar, Tabs, Breadcrumbs, call, usePageMeta, toast, Dialog } from 'frappe-ui'
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
@@ -399,6 +426,8 @@ const errorTitle = ref('')
 const errorMessage = ref('')
 const error = ref('')
 const showDeleteLinkedDocModal = ref(false)
+const showDeletePlanModal = ref(false)
+const planToDelete = ref(null)
 const showConvertToDealModal = ref(false)
 const showFilesUploader = ref(false)
 const showReserveModal = ref(false)
@@ -415,10 +444,15 @@ async function triggerStatusChange(value) { await triggerOnChange('status', valu
  */
 async function reserveFromLead() {
   try {
+    const leadKey = props.leadId || (lead.data && lead.data.name)
+    if (!leadKey) {
+      toast.error(__('Lead is still loading. Please try again in a moment.'))
+      return
+    }
     // 1) Check if this lead has at least one Payment Plan before doing anything
     const res = await call('frappe.client.get_list', {
       doctype: PAYMENT_PLAN_DOCTYPE,
-      filters: [['lead', '=', lead.data.name]],
+      filters: [['lead', '=', leadKey]],
       fields: ['name'],
       limit_page_length: 1,
     })
@@ -426,8 +460,8 @@ async function reserveFromLead() {
 
     if (!plans.length) {
       // No plans — warn and navigate to create a Payment Plan for this lead
-      toast.error(__('No payment plan found. Redirecting to create one…'))
-      router.push({ name: 'PaymentPlan', query: { lead: lead.data.name, showHeader: '1' } })
+      toast.error(__('No payment plan found for this lead. Create a payment plan first before reserving.'))
+      router.push({ name: 'PaymentPlan', query: { lead: leadKey, showHeader: '1' } })
       return
     }
 
@@ -736,9 +770,16 @@ async function deletePaymentPlan(name) {
   }
 }
 function confirmDeletePaymentPlan(name) {
-  // robust confirm (no dependency on injected $dialog)
-  const ok = window.confirm(__('Delete this Payment Plan?'))
-  if (ok) deletePaymentPlan(name)
+  planToDelete.value = name
+  showDeletePlanModal.value = true
+}
+
+async function handleConfirmDeletePlan() {
+  if (planToDelete.value) {
+    showDeletePlanModal.value = false
+    await deletePaymentPlan(planToDelete.value)
+    planToDelete.value = null
+  }
 }
 
 const titleRef = computed(() => {

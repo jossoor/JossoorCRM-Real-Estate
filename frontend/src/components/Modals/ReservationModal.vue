@@ -107,8 +107,11 @@
         <!-- Reservation fee + date -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm mb-1">{{ __('Reservation Fee') }}</label>
-            <Input v-model="form[RF.reservation_fee]" type="number" />
+            <label class="block text-sm mb-1">{{ __('Reservation Fee (EGP)') }}</label>
+            <Input v-model="form[RF.reservation_fee]" type="number" min="0" />
+            <p v-if="isInvalidReservationFee" class="text-xs text-red-500 mt-1">
+              {{ __('Reservation Fee must be 0 or greater.') }}
+            </p>
           </div>
           <div>
             <label class="block text-sm mb-1">{{ __('Reservation Date') }}</label>
@@ -229,12 +232,15 @@
         <!-- Numbers -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm mb-1">{{ __('Total Cost') }}</label>
+            <label class="block text-sm mb-1">{{ __('Total Cost (EGP)') }}</label>
             <Input v-model="form[RF.total_cost]" type="number" />
           </div>
           <div>
             <label class="block text-sm mb-1">{{ __('Years') }}</label>
-            <Input v-model="form[RF.years]" type="number" />
+            <Input v-model="form[RF.years]" type="number" min="1" />
+            <p v-if="isInvalidYears" class="text-xs text-red-500 mt-1">
+              {{ __('Number of installment years must be 1 or greater.') }}
+            </p>
           </div>
           <div>
             <label class="block text-sm mb-1">{{ __('Frequency') }}</label>
@@ -250,7 +256,7 @@
         <div />
         <div class="flex items-center gap-3">
           <Button variant="subtle" @click="closeAll">{{ __('Cancel') }}</Button>
-          <Button :loading="saving" variant="solid" @click="isEdit ? save() : create()">
+          <Button :loading="saving" variant="solid" :disabled="isInvalidReservationFee || isInvalidYears" @click="isEdit ? save() : create()">
             {{ isEdit ? __('Save') : __('Create') }}
           </Button>
         </div>
@@ -342,6 +348,18 @@ const links = ref({
   paymentPlanId: '',
   unitId: '',
   unitIsProjectUnit: false,
+})
+
+const isInvalidReservationFee = computed(() => {
+  const val = Number(form.value[RF.value.reservation_fee] || 0)
+  return val < 0
+})
+
+const isInvalidYears = computed(() => {
+  const val = form.value[RF.value.years]
+  if (val === '' || val === undefined || val === null) return false
+  const n = Number(val)
+  return n < 1
 })
 
 const errorMsg = ref('')
@@ -733,6 +751,14 @@ async function findReservationLinkTargets(){
 async function save(){
   errorMsg.value = ''
   if (!form.value.name) { errorMsg.value = __('Missing reservation name'); return }
+  if (isInvalidReservationFee.value) {
+    errorMsg.value = __('Reservation Fee must be 0 or greater.')
+    return
+  }
+  if (isInvalidYears.value) {
+    errorMsg.value = __('Number of installment years must be 1 or greater.')
+    return
+  }
 
   saving.value = true
   try {
@@ -797,6 +823,14 @@ async function save(){
 async function create(){
   errorMsg.value = ''
   if (!links.value.leadId) { errorMsg.value = __('Please select a CRM Lead'); return }
+  if (isInvalidReservationFee.value) {
+    errorMsg.value = __('Reservation Fee must be 0 or greater.')
+    return
+  }
+  if (isInvalidYears.value) {
+    errorMsg.value = __('Number of installment years must be 1 or greater.')
+    return
+  }
 
   if (!form.value[RF.value.reservation_date]) form.value[RF.value.reservation_date] = todayISO()
 

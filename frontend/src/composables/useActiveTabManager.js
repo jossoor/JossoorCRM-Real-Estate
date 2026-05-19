@@ -84,5 +84,16 @@ export function useActiveTabManager(tabs, storageKey) {
     tabIndex.value = getActiveTab()
   })
 
+  watch(
+    () => [route.params.leadId, route.params.dealId],
+    ([newLeadId, newDealId], [oldLeadId, oldDealId]) => {
+      if (newLeadId !== oldLeadId || newDealId !== oldDealId) {
+        const defaultTab = tabs.value?.[0]?.name || 'activity'
+        activeTab.value = defaultTab.toLowerCase()
+        tabIndex.value = 0
+      }
+    }
+  )
+
   return { tabIndex, changeTabTo }
 }

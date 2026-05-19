@@ -228,19 +228,13 @@
             <Button
               :tooltip="__('Send an email')"
               :icon="Email2Icon"
-              @click="
-                doc.email ? openEmailBox() : toast.error(__('No email set'))
-              "
+              @click="handleOpenEmail"
             />
 
             <Button
               :tooltip="__('Go to website')"
               :icon="LinkIcon"
-              @click="
-                doc.website
-                  ? openWebsite(doc.website)
-                  : toast.error(__('No website set'))
-              "
+              @click="handleOpenWebsite"
             />
 
             <Button
@@ -892,6 +886,43 @@ function setLostReason() {
   }
 
   showLostReasonModal.value = true
+}
+
+const emailToastLock = ref(false)
+const websiteToastLock = ref(false)
+
+function handleOpenWebsite() {
+  if (doc.value.website) {
+    openWebsite(doc.value.website)
+    return
+  }
+
+  if (websiteToastLock.value) return
+
+  websiteToastLock.value = true
+  toast.error(__('No website set'))
+
+  setTimeout(() => {
+    websiteToastLock.value = false
+  }, 2000)
+}
+
+function handleOpenEmail() {
+  const email = String(doc.value.email || '').trim()
+
+  if (email) {
+    openEmailBox()
+    return
+  }
+
+  if (emailToastLock.value) return
+
+  emailToastLock.value = true
+  toast.error(__('No email set'))
+
+  setTimeout(() => {
+    emailToastLock.value = false
+  }, 2000)
 }
 
 function beforeStatusChange(data) {

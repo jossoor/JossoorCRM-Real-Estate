@@ -48,8 +48,8 @@
         v-else-if="title == 'Notes'"
         class="grid grid-cols-1 gap-4 px-3 pb-3 sm:px-10 sm:pb-5 lg:grid-cols-2 xl:grid-cols-3"
       >
-        <div v-for="note in activities" @click="modalRef.showNote(note)">
-          <NoteArea :note="note" v-model="all_activities" />
+        <div v-for="note in activities" :key="note.name">
+          <NoteArea :note="note" v-model="all_activities" @edit="modalRef.showNote(note)" />
         </div>
       </div>
       <div v-else-if="title == 'FeedBacks'" class="pb-5">

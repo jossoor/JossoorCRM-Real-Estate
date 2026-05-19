@@ -36,7 +36,8 @@
           <!-- Save button always visible in header (disabled until schedule generated) -->
           <Button
             variant="solid"
-            :disabled="!planRows.length"
+            :disabled="!planRows.length || isSaving"
+            :loading="isSaving"
             @click="savePlan"
           >
             <template #prefix><FeatherIcon name="save" class="h-4 w-4" /></template>
@@ -182,15 +183,36 @@
         <!-- Inputs -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
           <div class="md:col-span-3">
-            <FormControl type="text" inputmode="decimal" :label="__('Area (m²)')" v-model="area$" />
+            <FormControl
+              type="text"
+              inputmode="decimal"
+              :label="__('Area (m²)')"
+              v-model="area$"
+              maxlength="15"
+              :error="hasInvalidNumericChars(area$.value) ? __('Only positive numbers are allowed.') : (Number(area || 0) > MAX_AREA ? __('Area exceeds maximum limit of {0} m².', [nf(MAX_AREA)]) : Number(area || 0) < 0 ? __('Area cannot be negative.') : '')"
+            />
             <div class="text-[11px] opacity-60 mt-1" v-if="fetched.area !== undefined">{{ __('Loaded from doctype') }}</div>
           </div>
           <div class="md:col-span-3">
-            <FormControl type="text" inputmode="decimal" :label="__('Price / m²')" v-model="pricePerM2$" />
+            <FormControl
+              type="text"
+              inputmode="decimal"
+              :label="__('Price / m²')"
+              v-model="pricePerM2$"
+              maxlength="15"
+              :error="hasInvalidNumericChars(pricePerM2$.value) ? __('Only positive numbers are allowed.') : (Number(pricePerM2 || 0) > MAX_PRICE_PER_M2 ? __('Price per m² exceeds maximum limit.') : Number(pricePerM2 || 0) < 0 ? __('Price per m² cannot be negative.') : '')"
+            />
             <div class="text-[11px] opacity-60 mt-1" v-if="fetched.pricePerM2 !== undefined">{{ __('Loaded from doctype') }}</div>
           </div>
           <div class="md:col-span-3">
-            <FormControl type="text" inputmode="numeric" :label="__('Years of Installments')" v-model="years$" />
+            <FormControl
+              type="text"
+              inputmode="numeric"
+              :label="__('Years of Installments')"
+              v-model="years$"
+              maxlength="2"
+              :error="hasInvalidNumericChars(years$.value) ? __('Only positive numbers are allowed.') : (Number(years || 0) > MAX_INSTALLMENT_YEARS ? __('Years of installments exceeds maximum limit of {0} years.', [MAX_INSTALLMENT_YEARS]) : Number(years || 0) < 0 ? __('Years of installments cannot be negative.') : '')"
+            />
           </div>
 
           <!-- Live / Editable total price -->
@@ -217,10 +239,10 @@
                   {{ __('This is a custom base price. The discount is applied on this base to produce the final payable total.') }}
                 </div>
 
-                <div class="mt-2 rounded-lg border px-3 py-2 bg-gray-50">
-                  <div class="text-xs opacity-60">{{ __('Total after discount (payable)') }}</div>
-                  <div class="font-semibold">{{ nf(displayTotal) }}</div>
-                  <div class="text-[11px] opacity-60 mt-1">
+                <div class="mt-2 rounded-lg border px-3 py-2 bg-gray-50 overflow-hidden min-w-0">
+                  <div class="text-xs opacity-60 truncate">{{ __('Total after discount (payable)') }}</div>
+                  <div class="font-semibold truncate" :title="nf(displayTotal)">{{ nf(displayTotal) }}</div>
+                  <div class="text-[11px] opacity-60 mt-1 truncate" :title="`${__('Base')}: ${nf(round2(customTotal || totalPriceAuto))} — ${__('Discount')}: ${nf(round2(discountAmount || 0))}`">
                     {{ __('Base') }}: {{ nf(round2(customTotal || totalPriceAuto)) }} — 
                     {{ __('Discount') }}: {{ nf(round2(discountAmount || 0)) }}
                   </div>
@@ -235,44 +257,50 @@
           <div class="rounded-lg border px-3 py-2 space-y-2">
             <div class="flex items-center justify-between">
               <div class="text-xs opacity-60">{{ __('Discount') }}</div>
-              <div class="text-xs opacity-60 inline-flex items-center gap-2">
-                <span class="text-[12px] opacity-60">{{ __('Apply discount') }}</span>
-              </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <FormControl
-                type="select"
-                :label="__('Discount Mode')"
-                v-model="discountMode"
-                :options="[
-                  { label: __('Percent of Total'), value: 'percent' },
-                  { label: __('Fixed EGP'), value: 'value' }
-                ]"
-              />
+            <Tooltip :text="totalPrice === 0 ? __('Set a total price first before applying a discount.') : ''">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <FormControl
+                  type="select"
+                  :label="__('Discount Mode')"
+                  v-model="discountMode"
+                  :disabled="totalPrice === 0"
+                  :options="[
+                    { label: __('Percent of Total'), value: 'percent' },
+                    { label: __('Fixed EGP'), value: 'value' }
+                  ]"
+                />
 
-              <FormControl
-                v-if="discountMode === 'percent'"
-                type="text"
-                inputmode="decimal"
-                :label="__('Discount (%)')"
-                v-model="discountPct$"
-              />
+                <FormControl
+                  type="text"
+                  inputmode="decimal"
+                  v-if="discountMode === 'percent'"
+                  :label="__('Discount (%)')"
+                  v-model="discountPct$"
+                  maxlength="15"
+                  :disabled="totalPrice === 0"
+                  :error="Number(discountPct || 0) > 100 ? __('Discount percentage cannot exceed 100%') : Number(discountPct || 0) < 0 ? __('Discount percentage cannot be negative') : ''"
+                />
 
-              <FormControl
-                v-else
-                type="text"
-                inputmode="decimal"
-                :label="__('Discount (EGP)')"
-                v-model="discountValue$"
-              />
+                <FormControl
+                  v-else
+                  type="text"
+                  inputmode="decimal"
+                  :label="__('Discount (EGP)')"
+                  v-model="discountValue$"
+                  maxlength="15"
+                  :disabled="totalPrice === 0"
+                  :error="Number(discountValue || 0) > totalPrice ? __('Discount EGP cannot exceed the total price') : Number(discountValue || 0) < 0 ? __('Discount EGP cannot be negative') : ''"
+                />
 
-              <div class="rounded-lg border px-3 py-2">
-                <div class="text-xs opacity-60">{{ __('Discount Amount') }}</div>
-                <div class="font-medium">{{ nf(round2(discountAmount || 0)) }}</div>
+                <div class="rounded-lg border px-3 py-2 overflow-hidden min-w-0 bg-gray-50/50">
+                  <div class="text-xs opacity-60 truncate">{{ __('Discount Amount') }}</div>
+                  <div class="font-medium truncate" :title="nf(round2(discountAmount || 0))">{{ nf(round2(discountAmount || 0)) }}</div>
+                </div>
+
               </div>
-
-            </div>
+            </Tooltip>
             
             <div class="text-[11px] opacity-60 mt-1">
               {{ __('Discount is applied on the item total (base + selected extras) before generating schedule.') }}
@@ -297,6 +325,8 @@
                 :label="__('Garage Price')"
                 v-model="garagePrice$"
                 class="w-full"
+                :disabled="isTotalPriceCorrupted"
+                :error="isTotalPriceCorrupted ? __('Please enter a valid Area and Price/m² first.') : (hasInvalidNumericChars(garagePrice$.value) ? __('Only positive numbers are allowed.') : (Number(garagePrice || 0) > MAX_EXTRA_PRICE ? __('Price seems unrealistically high. Please verify the amount.') : ''))"
               />
             </div>
           </div>
@@ -316,6 +346,8 @@
                 :label="__('Clubhouse Price')"
                 v-model="clubPrice$"
                 class="w-full"
+                :disabled="isTotalPriceCorrupted"
+                :error="isTotalPriceCorrupted ? __('Please enter a valid Area and Price/m² first.') : (hasInvalidNumericChars(clubPrice$.value) ? __('Only positive numbers are allowed.') : (Number(clubPrice || 0) > MAX_EXTRA_PRICE ? __('Price seems unrealistically high. Please verify the amount.') : ''))"
               />
             </div>
           </div>
@@ -328,7 +360,15 @@
               <label :for="ids.maintenance" class="select-none">{{ __('Include Maintenance') }}</label>
             </div>
             <div v-if="hasMaintenance" class="mt-2">
-              <FormControl type="text" inputmode="decimal" :label="__('Maintenance Fee')" v-model="maintenanceFee$" :placeholder="__('e.g., 150,000')" />
+              <FormControl
+                type="text"
+                inputmode="decimal"
+                :label="__('Maintenance Fee')"
+                v-model="maintenanceFee$"
+                :placeholder="__('e.g., 150,000')"
+                :disabled="isTotalPriceCorrupted"
+                :error="isTotalPriceCorrupted ? __('Please enter a valid Area and Price/m² first.') : (hasInvalidNumericChars(maintenanceFee$.value) ? __('Only positive numbers are allowed.') : (Number(maintenanceFee || 0) > MAX_EXTRA_PRICE ? __('Price seems unrealistically high. Please verify the amount.') : ''))"
+              />
             </div>
           </div>
 
@@ -340,7 +380,14 @@
               <label for="has-garden" class="select-none">{{ __('Include Garden') }}</label>
             </div>
             <div v-if="hasGarden" class="mt-2">
-              <FormControl type="text" inputmode="decimal" :label="__('Garden Price')" v-model="gardenPrice$" />
+              <FormControl
+                type="text"
+                inputmode="decimal"
+                :label="__('Garden Price')"
+                v-model="gardenPrice$"
+                :disabled="isTotalPriceCorrupted"
+                :error="isTotalPriceCorrupted ? __('Please enter a valid Area and Price/m² first.') : (hasInvalidNumericChars(gardenPrice$.value) ? __('Only positive numbers are allowed.') : (Number(gardenPrice || 0) > MAX_EXTRA_PRICE ? __('Price seems unrealistically high. Please verify the amount.') : ''))"
+              />
             </div>
           </div>
 
@@ -352,7 +399,14 @@
               <label for="has-roof" class="select-none">{{ __('Include Roof') }}</label>
             </div>
             <div v-if="hasRoof" class="mt-2">
-              <FormControl type="text" inputmode="decimal" :label="__('Roof Price')" v-model="roofPrice$" />
+              <FormControl
+                type="text"
+                inputmode="decimal"
+                :label="__('Roof Price')"
+                v-model="roofPrice$"
+                :disabled="isTotalPriceCorrupted"
+                :error="isTotalPriceCorrupted ? __('Please enter a valid Area and Price/m² first.') : (hasInvalidNumericChars(roofPrice$.value) ? __('Only positive numbers are allowed.') : (Number(roofPrice || 0) > MAX_EXTRA_PRICE ? __('Price seems unrealistically high. Please verify the amount.') : ''))"
+              />
             </div>
           </div>
 
@@ -364,7 +418,14 @@
               <label for="has-pool" class="select-none">{{ __('Include Pool') }}</label>
             </div>
             <div v-if="hasPool" class="mt-2">
-              <FormControl type="text" inputmode="decimal" :label="__('Pool Price')" v-model="poolPrice$" />
+              <FormControl
+                type="text"
+                inputmode="decimal"
+                :label="__('Pool Price')"
+                v-model="poolPrice$"
+                :disabled="isTotalPriceCorrupted"
+                :error="isTotalPriceCorrupted ? __('Please enter a valid Area and Price/m² first.') : (hasInvalidNumericChars(poolPrice$.value) ? __('Only positive numbers are allowed.') : (Number(poolPrice || 0) > MAX_EXTRA_PRICE ? __('Price seems unrealistically high. Please verify the amount.') : ''))"
+              />
             </div>
           </div>
         </div>
@@ -388,9 +449,15 @@
 
           <!-- Default -->
           <div v-if="!splitDownpayment" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <FormControl type="text" inputmode="decimal" :label="__('Down Payment (%)')" v-model="downPct$" />
+            <FormControl
+              type="text"
+              inputmode="decimal"
+              :label="__('Down Payment (%)')"
+              v-model="downPct$"
+              :error="hasInvalidNumericChars(downPct$.value) ? __('Only positive numbers are allowed.') : ''"
+            />
             <FormControl type="text" :label="__('Down Payment (Value)')" :value="nf(round2(downValue))" readonly />
-            <FormControl type="date" :label="__('Down Payment Date')" v-model="downDate" />
+            <FormControl type="date" :label="__('Down Payment Date')" v-model="downDate" :error="downDate && isInvalidDateRange(downDate) ? __('Date must be between {0} and {1}.', [CURRENT_YEAR, MAX_YEAR]) : ''" />
             <div class="rounded-lg border px-3 py-2">
               <div class="text-xs opacity-60">{{ __('Remaining After DP (%)') }}</div>
               <div class="font-medium">{{ round2(remainingAfterDPPercent) }}%</div>
@@ -398,16 +465,28 @@
           </div>
 
           <!-- Split -->
-          <div v-else class="space-y-3">
+          <div class="space-y-3" v-else>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormControl type="text" inputmode="decimal" :label="__('Down Payment 1 (%)')" v-model="dp1Pct$" />
+              <FormControl
+                type="text"
+                inputmode="decimal"
+                :label="__('Down Payment 1 (%)')"
+                v-model="dp1Pct$"
+                :error="hasInvalidNumericChars(dp1Pct$.value) ? __('Only positive numbers are allowed.') : ''"
+              />
               <FormControl type="text" :label="__('Down Payment 1 (Value)')" :value="nf(round2(dp1Value))" readonly />
-              <FormControl type="date" :label="__('Down Payment 1 Date')" v-model="dp1Date" />
+              <FormControl type="date" :label="__('Down Payment 1 Date')" v-model="dp1Date" :error="dp1Date && isInvalidDateRange(dp1Date) ? __('Date must be between {0} and {1}.', [CURRENT_YEAR, MAX_YEAR]) : ''" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormControl type="text" inputmode="decimal" :label="__('Down Payment 2 (%)')" v-model="dp2Pct$" />
+              <FormControl
+                type="text"
+                inputmode="decimal"
+                :label="__('Down Payment 2 (%)')"
+                v-model="dp2Pct$"
+                :error="hasInvalidNumericChars(dp2Pct$.value) ? __('Only positive numbers are allowed.') : ''"
+              />
               <FormControl type="text" :label="__('Down Payment 2 (Value)')" :value="nf(round2(dp2Value))" readonly />
-              <FormControl type="date" :label="__('Down Payment 2 Date')" v-model="dp2Date" />
+              <FormControl type="date" :label="__('Down Payment 2 Date')" v-model="dp2Date" :error="dp2Date && isInvalidDateRange(dp2Date) ? __('Date must be between {0} and {1}.', [CURRENT_YEAR, MAX_YEAR]) : (dp1Date && dp2Date && new Date(dp2Date) < new Date(dp1Date) ? __('Down Payment 2 Date cannot be before Down Payment 1 Date.') : '')" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -436,8 +515,8 @@
           </div>
 
           <div v-show="hasYearly" class="space-y-3">
-            <div class="flex flex-wrap gap-2">
-              <Button variant="subtle" @click="addYearlyPayment">
+            <div class="flex flex-wrap items-center gap-2">
+              <Button variant="subtle" @click="addYearlyPayment" :disabled="yearlyPayments.length >= years">
                 <template #prefix><FeatherIcon name="plus" class="h-4" /></template>
                 {{ __('Add Payment') }}
               </Button>
@@ -445,6 +524,9 @@
                 <template #prefix><FeatherIcon name="trash" class="h-4" /></template>
                 {{ __('Clear') }}
               </Button>
+              <span class="text-xs text-amber-600 font-medium" v-if="yearlyPayments.length >= years">
+                {{ __('Maximum of {0} yearly payments allowed (1 per year of installments).', [years]) }}
+              </span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -606,7 +688,16 @@
     </Card>
 
     <!-- ================== SUMMARY ================== -->
-    <div v-if="errorMsg" class="rounded-lg border border-red-2 00 bg-red-50 text-red-700 p-3">
+    <div
+      v-if="limitErrors.length"
+      class="rounded-lg border border-red-200 bg-red-50 text-red-700 p-3 space-y-1"
+    >
+      <div class="font-semibold text-sm">{{ __('Validation Errors:') }}</div>
+      <ul class="list-disc list-inside text-xs">
+        <li v-for="(err, idx) in limitErrors" :key="idx">{{ err }}</li>
+      </ul>
+    </div>
+    <div v-if="errorMsg" class="rounded-lg border border-red-200 bg-red-50 text-red-700 p-3">
       {{ errorMsg }}
     </div>
 
@@ -694,7 +785,7 @@
         <template #prefix><FeatherIcon name="download" class="h-4" /></template>
         {{ __('Export Excel') }}
       </Button>
-      <Button variant="subtle" :disabled="!planRows.length" @click="savePlan">
+      <Button variant="subtle" :disabled="!planRows.length || isSaving" :loading="isSaving" @click="savePlan">
         <template #prefix><FeatherIcon name="save" class="h-4" /></template>
         {{ __('Save') }}
       </Button>
@@ -706,7 +797,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Button, FormControl, FeatherIcon, call, toast } from 'frappe-ui'
+import { Button, FormControl, FeatherIcon, call, toast, Tooltip } from 'frappe-ui'
 import Card from '@/components/Card.vue'
 
 /** ==== Doctype names ==== */
@@ -1045,6 +1136,7 @@ const manualYears   = ref([])
 const planRows      = ref([])
 const errorMsg      = ref('')
 const saveMsg       = ref('')
+const isSaving      = ref(false)
 
 const planName      = ref('')
 const notes         = ref('')
@@ -1131,6 +1223,149 @@ const totalPriceAuto = computed(() =>
 // totalPrice now respects the editable override and discount
 const totalPrice = computed(() => editTotalPrice.value ? Number(customTotal.value || 0) : Number(totalPriceAuto.value || 0))
 
+const isTotalPriceCorrupted = computed(() => {
+  const areaVal = Number(area.value || 0)
+  const priceVal = Number(pricePerM2.value || 0)
+  return areaVal <= 0 || priceVal <= 0 || areaVal > MAX_AREA || priceVal > MAX_PRICE_PER_M2
+})
+
+const MAX_AREA = 1000000
+const MAX_PRICE_PER_M2 = 1000000000
+const MAX_INSTALLMENT_YEARS = 50
+const MAX_EXTRA_PRICE = 50000000
+
+const limitErrors = computed(() => {
+  const errs = []
+  if (hasInvalidNumericChars(area$.value)) {
+    errs.push(__('Area contains invalid characters.'))
+  } else {
+    if (Number(area.value || 0) > MAX_AREA) {
+      errs.push(__('Area exceeds maximum limit of {0} m².', [nf(MAX_AREA)]))
+    }
+    if (Number(area.value || 0) < 0) {
+      errs.push(__('Area cannot be negative.'))
+    }
+  }
+  if (hasInvalidNumericChars(pricePerM2$.value)) {
+    errs.push(__('Price per m² contains invalid characters.'))
+  } else {
+    if (Number(pricePerM2.value || 0) > MAX_PRICE_PER_M2) {
+      errs.push(__('Price per m² exceeds maximum limit.'))
+    }
+    if (Number(pricePerM2.value || 0) < 0) {
+      errs.push(__('Price per m² cannot be negative.'))
+    }
+  }
+  if (hasInvalidNumericChars(years$.value)) {
+    errs.push(__('Years of installments contains invalid characters.'))
+  } else {
+    if (Number(years.value || 0) > MAX_INSTALLMENT_YEARS) {
+      errs.push(__('Years of installments exceeds maximum limit of {0} years.', [MAX_INSTALLMENT_YEARS]))
+    }
+    if (Number(years.value || 0) < 0) {
+      errs.push(__('Years of installments cannot be negative.'))
+    }
+  }
+  if (discountMode.value === 'percent') {
+    if (Number(discountPct.value || 0) > 100) {
+      errs.push(__('Discount percent cannot exceed 100%.'))
+    }
+    if (Number(discountPct.value || 0) < 0) {
+      errs.push(__('Discount percent cannot be negative.'))
+    }
+  } else {
+    const total = Number(totalPrice.value || 0)
+    if (Number(discountValue.value || 0) > total) {
+      errs.push(__('Discount EGP cannot exceed the total price ({0} EGP).', [nf(round2(total))]))
+    }
+    if (Number(discountValue.value || 0) < 0) {
+      errs.push(__('Discount EGP cannot be negative.'))
+    }
+  }
+  if (editTotalPrice.value) {
+    if (Number(customTotal.value || 0) > (MAX_PRICE_PER_M2 * MAX_AREA)) {
+      errs.push(__('Custom total price exceeds maximum limit.'))
+    }
+    if (Number(customTotal.value || 0) < 0) {
+      errs.push(__('Custom total price cannot be negative.'))
+    }
+  }
+  if (!splitDownpayment.value) {
+    if (hasInvalidNumericChars(downPct$.value)) {
+      errs.push(__('Down Payment (%) contains invalid characters.'))
+    }
+    if (downDate.value && isInvalidDateRange(downDate.value)) {
+      errs.push(__('Down Payment Date must be between {0} and {1}.', [CURRENT_YEAR, MAX_YEAR]))
+    }
+  } else {
+    if (hasInvalidNumericChars(dp1Pct$.value)) {
+      errs.push(__('Down Payment 1 (%) contains invalid characters.'))
+    }
+    if (hasInvalidNumericChars(dp2Pct$.value)) {
+      errs.push(__('Down Payment 2 (%) contains invalid characters.'))
+    }
+    if (dp1Date.value && isInvalidDateRange(dp1Date.value)) {
+      errs.push(__('Down Payment 1 Date must be between {0} and {1}.', [CURRENT_YEAR, MAX_YEAR]))
+    }
+    if (dp2Date.value && isInvalidDateRange(dp2Date.value)) {
+      errs.push(__('Down Payment 2 Date must be between {0} and {1}.', [CURRENT_YEAR, MAX_YEAR]))
+    }
+    if (dp1Date.value && dp2Date.value && new Date(dp2Date.value) < new Date(dp1Date.value)) {
+      errs.push(__('Down Payment 2 Date cannot be before Down Payment 1 Date.'))
+    }
+  }
+  if (hasGarage.value) {
+    if (hasInvalidNumericChars(garagePrice$.value)) {
+      errs.push(__('Garage Price contains invalid characters.'))
+    } else if (Number(garagePrice.value || 0) > MAX_EXTRA_PRICE) {
+      errs.push(__('Garage Price seems unrealistically high. Please verify the amount.'))
+    }
+  }
+  if (hasClubhouse.value) {
+    if (hasInvalidNumericChars(clubPrice$.value)) {
+      errs.push(__('Clubhouse Price contains invalid characters.'))
+    } else if (Number(clubPrice.value || 0) > MAX_EXTRA_PRICE) {
+      errs.push(__('Clubhouse Price seems unrealistically high. Please verify the amount.'))
+    }
+  }
+  if (hasMaintenance.value) {
+    if (hasInvalidNumericChars(maintenanceFee$.value)) {
+      errs.push(__('Maintenance Fee contains invalid characters.'))
+    } else if (Number(maintenanceFee.value || 0) > MAX_EXTRA_PRICE) {
+      errs.push(__('Maintenance Fee seems unrealistically high. Please verify the amount.'))
+    }
+  }
+  if (hasGarden.value) {
+    if (hasInvalidNumericChars(gardenPrice$.value)) {
+      errs.push(__('Garden Price contains invalid characters.'))
+    } else if (Number(gardenPrice.value || 0) > MAX_EXTRA_PRICE) {
+      errs.push(__('Garden Price seems unrealistically high. Please verify the amount.'))
+    }
+  }
+  if (hasRoof.value) {
+    if (hasInvalidNumericChars(roofPrice$.value)) {
+      errs.push(__('Roof Price contains invalid characters.'))
+    } else if (Number(roofPrice.value || 0) > MAX_EXTRA_PRICE) {
+      errs.push(__('Roof Price seems unrealistically high. Please verify the amount.'))
+    }
+  }
+  if (hasPool.value) {
+    if (hasInvalidNumericChars(poolPrice$.value)) {
+      errs.push(__('Pool Price contains invalid characters.'))
+    } else if (Number(poolPrice.value || 0) > MAX_EXTRA_PRICE) {
+      errs.push(__('Pool Price seems unrealistically high. Please verify the amount.'))
+    }
+  }
+  if (hasYearly.value && yearlyPayments.value.length > Number(years.value || 1)) {
+    errs.push(__('Number of yearly payments cannot exceed the years of installments.'))
+  }
+  return errs
+})
+
+function exceedsLimits() {
+  return limitErrors.value.length > 0
+}
+
 const dp1Value       = computed(() => discountedTotal.value * (Number(dp1Pct.value || 0) / 100))
 const dp2Value       = computed(() => discountedTotal.value * (Number(dp2Pct.value || 0) / 100))
 const totalDownPct   = computed(() => splitDownpayment.value
@@ -1142,6 +1377,7 @@ const downValue      = computed(() => discountedTotal.value * (Number(downPct.va
 const remainingAfterDPPercent = computed(() => Math.max(0, 100 - Number(totalDownPct.value || 0)))
 
 const discountAmount = computed(() => {
+  if (Number(totalPrice.value || 0) === 0) return 0
   const base = Number(totalPrice.value || 0)
   return discountMode.value === 'percent'
     ? round2(base * (Number(discountPct.value || 0) / 100))
@@ -1235,6 +1471,21 @@ function nf(v) { const n = Number(v); return Number.isFinite(n) ? n.toLocaleStri
 function round2(n) { return Math.round(Number(n || 0) * 100) / 100 }
 function pctAlmostEqual(a, b, eps = 0.01) { return Math.abs(Number(a||0) - Number(b||0)) <= eps }
 function clamp(n, min=0, max=100) { n = Number(n||0); return Math.min(max, Math.max(min, n)) }
+function hasInvalidNumericChars(s) {
+  if (s == null) return false
+  const clean = String(s).trim()
+  if (!clean) return false
+  return !/^[0-9,.]*$/.test(clean) || (clean.split('.').length > 2)
+}
+const CURRENT_YEAR = new Date().getFullYear()
+const MAX_YEAR = CURRENT_YEAR + 10
+function isInvalidDateRange(dateStr) {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return true
+  const y = d.getFullYear()
+  return y < CURRENT_YEAR || y > MAX_YEAR
+}
 function todayPlusDays(days) { const d = new Date(); d.setDate(d.getDate() + Number(days || 0)); return d.toISOString().slice(0,10) }
 function parseDate(iso) { const d = new Date(iso); return isNaN(d.getTime()) ? new Date() : new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) }
 function addMonths(d, months) { const nd = new Date(d.getTime()); nd.setUTCMonth(nd.getUTCMonth() + Number(months || 0)); return nd }
@@ -1396,7 +1647,12 @@ function onLeadPicked(val) {
 }
 
 /* -------------------- Manual & Yearly helpers -------------------- */
-function addYearlyPayment() { yearlyPayments.value.push({ date: startDate.value, mode: 'percent', percent: 0, value: 0 }) }
+function addYearlyPayment() {
+  if (yearlyPayments.value.length >= Number(years.value || 1)) {
+    return
+  }
+  yearlyPayments.value.push({ date: startDate.value, mode: 'percent', percent: 0, value: 0 })
+}
 function clearYearlyPayments() { yearlyPayments.value = [] }
 function removeYearlyPayment(idx) { yearlyPayments.value.splice(idx, 1) }
 
@@ -1471,6 +1727,10 @@ function balanceToTotal(rows, target) {
 }
 
 function generatePlan() {
+  if (exceedsLimits()) {
+    planRows.value = []
+    return
+  }
   const rows = []
   if (!area.value || !pricePerM2.value || !yearsInt.value) { planRows.value = []; return }
 
@@ -1832,7 +2092,8 @@ async function loadExistingPlan(name) {
     // If stored doc has total_price and it's different from auto-calculated, use it as custom
     if (typeof doc.total_price === 'number') {
       const auto = Number(totalPriceAuto.value || 0)
-      if (!pctAlmostEqual(doc.total_price, auto)) {
+      const isAstronomical = doc.total_price > (MAX_PRICE_PER_M2 * MAX_AREA) || doc.total_price < 0
+      if (!pctAlmostEqual(doc.total_price, auto) && !isAstronomical) {
         customTotal.value = Number(doc.total_price || 0)
         editTotalPrice.value = true
       } else {
@@ -1931,6 +2192,29 @@ watch(yearlyPayments, () => {
 }, { deep: true })
 watch(hasYearly, v => { if (!v) yearlyPayments.value = [] })
 
+watch(totalPrice, (val) => {
+  if (Number(val || 0) === 0) {
+    discountPct.value = 0
+    discountValue.value = 0
+  }
+})
+
+watch([area, pricePerM2], () => {
+  editTotalPrice.value = false
+  customTotal.value = 0
+})
+
+watch(isTotalPriceCorrupted, (corrupted) => {
+  if (corrupted) {
+    garagePrice.value = 0
+    clubPrice.value = 0
+    maintenanceFee.value = 0
+    gardenPrice.value = 0
+    roofPrice.value = 0
+    poolPrice.value = 0
+  }
+}, { immediate: true })
+
 /* Validation message with tolerance */
 const validationMessage = computed(() => {
   const instPct = instType.value === 'manual'
@@ -1970,76 +2254,78 @@ watch(
 
 /* -------- SAVE (insert vs update) -------- */
 async function savePlan() {
+  if (isSaving.value) return
   saveMsg.value = ''
   if (!planRows.value.length) { saveMsg.value = __('Nothing to save (empty schedule).'); return }
   if (!String(planName.value || '').trim()) { saveMsg.value = __('Plan Name is required.'); return }
   
-  const id = currentPlanName.value || routePlanName.value
-  const { id: unitIdToSave, label: unitLabelToSave } = resolveUnitFromModel()
-  const projectNameToSave = projectLabel.value || projectId.value || ''
-  const unitNameToSave    = unitLabelToSave   || unitIdToSave   || ''
-
-  const patch = {
-    plan_name: planName.value || '',
-    title: planName.value || '',
-    notes: notes.value || '',
-
-    area: Number(area.value || 0),
-    price_per_m2: Number(pricePerM2.value || 0),
-    total_price: Number(totalPrice.value || 0),
-
-    years: Number(years.value || 0),
-    frequency: mapUiFreqToDoc(frequency.value),
-    start_date: startDate.value || null,
-
-    down_pct: round2(totalDownPct.value),
-    yearly_pct: round2(totalYearlyPercent.value),
-    installments_pct: round2(installmentPercent.value),
-
-    project_name: projectNameToSave,
-    unit_name:    unitNameToSave,
-
-    // EXTRAS
-    has_garage:       !!hasGarage.value,
-    garage_price:     Number(garagePrice.value || 0),
-
-    has_clubhouse:    !!hasClubhouse.value,
-    clubhouse_price:  Number(clubPrice.value || 0),
-
-    has_maintenance:  !!hasMaintenance.value,
-    maintenance_fee:  hasMaintenance.value ? Number(maintenanceFee.value || 0) : 0,
-
-    has_garden:       !!hasGarden.value,
-    garden_price:     Number(gardenPrice.value || 0),
-
-    has_roof:         !!hasRoof.value,
-    roof_price:       Number(roofPrice.value || 0),
-
-    has_pool:         !!hasPool.value,
-    pool_price:       Number(poolPrice.value || 0),
-
-    // DISCOUNT
-    discount_mode:   discountMode.value || 'percent',
-    discount_pct:    round2(discountPct.value || 0),
-    discount_value:  Number(discountValue.value || 0),
-  }
-
-  const scheduleRows = planRows.value.map((r, i) => ({
-    doctype: 'Payment Plan Schedule Item',
-    idx: i + 1,
-    date: r.date,
-    label: r.label,
-    amount: Number(r.amount || 0),
-  }))
-
-  if ((planName.value || '').trim().length > 140) {
-    errorMsg.value = __('Plan Name must not exceed 140 characters')
-    saveMsg.value = ''
-    return
-  }
-  
-
+  isSaving.value = true
   try {
+    const id = currentPlanName.value || routePlanName.value
+    const { id: unitIdToSave, label: unitLabelToSave } = resolveUnitFromModel()
+    const projectNameToSave = projectLabel.value || projectId.value || ''
+    const unitNameToSave    = unitLabelToSave   || unitIdToSave   || ''
+
+    const patch = {
+      plan_name: planName.value || '',
+      title: planName.value || '',
+      notes: notes.value || '',
+
+      area: Number(area.value || 0),
+      price_per_m2: Number(pricePerM2.value || 0),
+      total_price: Number(totalPrice.value || 0),
+
+      years: Number(years.value || 0),
+      frequency: mapUiFreqToDoc(frequency.value),
+      start_date: startDate.value || null,
+
+      down_pct: round2(totalDownPct.value),
+      yearly_pct: round2(totalYearlyPercent.value),
+      installments_pct: round2(installmentPercent.value),
+
+      project_name: projectNameToSave,
+      unit_name:    unitNameToSave,
+
+      // EXTRAS
+      has_garage:       !!hasGarage.value,
+      garage_price:     Number(garagePrice.value || 0),
+
+      has_clubhouse:    !!hasClubhouse.value,
+      clubhouse_price:  Number(clubPrice.value || 0),
+
+      has_maintenance:  !!hasMaintenance.value,
+      maintenance_fee:  hasMaintenance.value ? Number(maintenanceFee.value || 0) : 0,
+
+      has_garden:       !!hasGarden.value,
+      garden_price:     Number(gardenPrice.value || 0),
+
+      has_roof:         !!hasRoof.value,
+      roof_price:       Number(roofPrice.value || 0),
+
+      has_pool:         !!hasPool.value,
+      pool_price:       Number(poolPrice.value || 0),
+
+      // DISCOUNT
+      discount_mode:   discountMode.value || 'percent',
+      discount_pct:    round2(discountPct.value || 0),
+      discount_value:  Number(discountValue.value || 0),
+    }
+
+    const scheduleRows = planRows.value.map((r, i) => ({
+      doctype: 'Payment Plan Schedule Item',
+      idx: i + 1,
+      date: r.date,
+      label: r.label,
+      amount: Number(r.amount || 0),
+    }))
+
+    if ((planName.value || '').trim().length > 140) {
+      errorMsg.value = __('Plan Name must not exceed 140 characters')
+      saveMsg.value = ''
+      return
+    }
+    
+
     if (!id) {
       const insertDoc = {
         doctype: props.planDoctype,
@@ -2088,7 +2374,7 @@ async function savePlan() {
     const saved = saveRes?.message ?? saveRes
     currentPlanName.value = saved?.name || id
     saveMsg.value = __('Updated.')
-    } catch (e) {
+  } catch (e) {
     const raw = e?.messages?.[0] || e?.message || e?.exc || String(e)
 
     if (/TimestampMismatch|Document has been modified|CannotChangeConstant/i.test(raw)) {
@@ -2136,6 +2422,8 @@ async function savePlan() {
     } else {
       saveMsg.value = String(raw).replace(/<[^>]*>/g, '')
     }
+  } finally {
+    isSaving.value = false
   }
 }
 

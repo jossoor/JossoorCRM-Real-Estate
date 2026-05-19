@@ -1,6 +1,7 @@
 <template>
   <div
     class="activity group flex h-48 cursor-pointer flex-col justify-between gap-2 rounded-md bg-surface-gray-1 px-4 py-3 hover:bg-surface-gray-2"
+    @click="emit('edit', note)"
   >
     <div class="flex items-center justify-between">
       <div class="truncate text-lg font-medium text-ink-gray-8">
@@ -9,19 +10,27 @@
       <Dropdown
         :options="[
           {
+            label: __('Edit'),
+            icon: 'edit-2',
+            onClick: () => emit('edit', note),
+          },
+          {
             label: __('Delete'),
             icon: 'trash-2',
-            onClick: () => deleteNote(note.name),
+            onClick: () => confirmDeleteNote(note.name),
           },
         ]"
         @click.stop
         class="h-6 w-6"
       >
-        <Button
-          icon="more-horizontal"
-          variant="ghosted"
-          class="!h-6 !w-6 hover:bg-surface-gray-2"
-        />
+        <template #default="{ open }">
+          <Button
+            icon="more-horizontal"
+            variant="ghosted"
+            class="!h-6 !w-6 hover:bg-surface-gray-2"
+            @click.stop
+          />
+        </template>
       </Dropdown>
     </div>
     <TextEditor
@@ -54,14 +63,30 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import { timeAgo, formatDate } from '@/utils'
 import { Tooltip, Dropdown, TextEditor, call } from 'frappe-ui'
 import { usersStore } from '@/stores/users'
+import { globalStore } from '@/stores/global'
 
 const props = defineProps({
   note: Object,
 })
 
+const emit = defineEmits(['edit'])
 const notes = defineModel()
 
 const { getUser } = usersStore()
+const { $dialog } = globalStore()
+
+function confirmDeleteNote(name) {
+  $dialog({
+    title: __('Delete Note'),
+    message: __('Are you sure you want to delete this note?'),
+    variant: 'danger',
+    primaryActionLabel: __('Delete'),
+    onPrimaryAction: async ({ close }) => {
+      await deleteNote(name)
+      close()
+    }
+  })
+}
 
 async function deleteNote(name) {
   await call('frappe.client.delete', {

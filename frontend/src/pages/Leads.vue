@@ -1658,6 +1658,15 @@ const task = ref({
   status: 'Backlog'
 })
 function showTask(name) {
+  task.value = {
+    title: '',
+    task_type: '',
+    description: '',
+    assigned_to: '',
+    due_date: '',
+    priority: 'Low',
+    status: 'Backlog'
+  }
   docname.value = name
   showTaskModal.value = true
 }

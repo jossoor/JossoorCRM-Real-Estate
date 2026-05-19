@@ -51,6 +51,8 @@
         <Button
           :label="editMode ? __('Update') : __('Create')"
           variant="solid"
+          :loading="isSaving"
+          :disabled="isSaving"
           @click="updateNote"
         />
       </div>
@@ -93,47 +95,59 @@ const { updateOnboardingStep } = useOnboarding('frappecrm')
 const error = ref(null)
 const title = ref(null)
 const editMode = ref(false)
+const isSaving = ref(false)
 let _note = ref({})
 
 async function updateNote() {
-  if (_note.value.name) {
-    let d = await call('frappe.client.set_value', {
-      doctype: 'FCRM Note',
-      name: _note.value.name,
-      fieldname: _note.value,
-    })
-    if (d.name) {
-      notes.value?.reload()
-      emit('after', d)
-    }
-  } else {
-    let d = await call(
-      'frappe.client.insert',
-      {
-        doc: {
-          doctype: 'FCRM Note',
-          title: _note.value.title,
-          content: _note.value.content,
-          reference_doctype: props.doctype,
-          reference_docname: props.doc || '',
+  if (isSaving.value) return
+  isSaving.value = true
+  error.value = null
+  
+  try {
+    if (_note.value.name) {
+      let d = await call('frappe.client.set_value', {
+        doctype: 'FCRM Note',
+        name: _note.value.name,
+        fieldname: _note.value,
+      })
+      if (d.name) {
+        notes.value?.reload()
+        emit('after', d)
+        show.value = false
+      }
+    } else {
+      let d = await call(
+        'frappe.client.insert',
+        {
+          doc: {
+            doctype: 'FCRM Note',
+            title: _note.value.title,
+            content: _note.value.content,
+            reference_doctype: props.doctype,
+            reference_docname: props.doc || '',
+          },
         },
-      },
-      {
-        onError: (err) => {
-          if (err.error.exc_type == 'MandatoryError') {
-            error.value = 'Title is mandatory'
-          }
+        {
+          onError: (err) => {
+            if (err.error?.exc_type == 'MandatoryError') {
+              error.value = 'Title is mandatory'
+            }
+          },
         },
-      },
-    )
-    if (d.name) {
-      updateOnboardingStep('create_first_note')
-      capture('note_created')
-      notes.value?.reload()
-      emit('after', d, true)
+      )
+      if (d.name) {
+        updateOnboardingStep('create_first_note')
+        capture('note_created')
+        notes.value?.reload()
+        emit('after', d, true)
+        show.value = false
+      }
     }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isSaving.value = false
   }
-  show.value = false
 }
 
 function redirect() {
@@ -151,6 +165,7 @@ watch(
   (value) => {
     if (!value) return
     editMode.value = false
+    isSaving.value = false
     nextTick(() => {
       title.value?.el?.focus()
       _note.value = { ...props.note }

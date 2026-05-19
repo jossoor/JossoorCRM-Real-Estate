@@ -223,7 +223,7 @@ const hasReminderConflict = computed(() => {
 
   if (Number.isNaN(reminder?.getTime?.())) return false
 
-  if (reminder <= new Date()) return true
+  if (!editMode.value && reminder <= new Date()) return true
 
   if (_task.value.due_date) {
     const due = typeof _task.value.due_date === 'string'
@@ -332,7 +332,7 @@ function validateReminder() {
     return true
   }
 
-  if (reminder <= new Date()) {
+  if (!editMode.value && reminder <= new Date()) {
     reminderError.value = __('Reminder must be a future date and time')
     return false
   }
@@ -546,6 +546,8 @@ async function render() {
     }
   } finally {
     bootstrapping.value = false
+    await nextTick()
+    validateReminder()
   }
 }
 
