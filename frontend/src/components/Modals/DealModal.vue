@@ -192,29 +192,77 @@ async function createDeal() {
     auto: true,
     validate() {
       error.value = null
+      if (chooseExistingContact.value) {
+        if (!deal.doc.contact) {
+          error.value = __('Contact is required')
+          return error.value
+        }
+      } else {
+        if (!deal.doc.first_name || !deal.doc.first_name.trim()) {
+          error.value = __('First Name is required')
+          return error.value
+        }
+        
+        const invalidChars = [';','<','>','{','}','[',']']
+        if (invalidChars.some(ch => String(deal.doc.first_name || '').includes(ch))) {
+          error.value = __('First Name contains invalid characters')
+          return error.value
+        }
+
+        if (String(deal.doc.first_name || '').length > 50) {
+          error.value = __('First Name cannot exceed 50 characters')
+          return error.value
+        }
+
+        if (deal.doc.last_name && String(deal.doc.last_name || '').length > 140) {
+          error.value = __('Last Name cannot exceed 140 characters')
+          return error.value
+        }
+
+        if (!deal.doc.mobile_no || !deal.doc.mobile_no.trim()) {
+          error.value = __('Mobile No is mandatory')
+          return error.value
+        }
+
+        if (!isValidPhone(deal.doc.mobile_no)) {
+          error.value = __('Enter a valid Egyptian (01xxxxxxxxx) or Saudi (05xxxxxxxx) mobile number')
+          return error.value
+        }
+        
+        if (deal.doc.email) {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(deal.doc.email).trim())) {
+            error.value = __('Invalid Email address')
+            return error.value
+          }
+          if (String(deal.doc.email).length > 140) {
+            error.value = __('Email cannot exceed 140 characters')
+            return error.value
+          }
+        }
+      }
+
+      if (deal.doc.organization_name && String(deal.doc.organization_name).length > 140) {
+        error.value = __('Organization Name cannot exceed 140 characters')
+        return error.value
+      }
+
       if (deal.doc.annual_revenue) {
         if (typeof deal.doc.annual_revenue === 'string') {
           deal.doc.annual_revenue = deal.doc.annual_revenue.replace(/,/g, '')
-        } else if (isNaN(deal.doc.annual_revenue)) {
-          error.value = __('Annual Revenue should be a number')
+        }
+        const rev = Number(deal.doc.annual_revenue)
+        if (isNaN(rev) || rev < 0) {
+          error.value = __('Annual Revenue should be a positive number')
           return error.value
         }
+        deal.doc.annual_revenue = rev
       }
-      if (
-        deal.doc.mobile_no &&
-        isNaN(deal.doc.mobile_no.replace(/[-+() ]/g, ''))
-      ) {
-        error.value = __('Mobile No should be a number')
-        return error.value
-      }
-      if (deal.doc.email && !deal.doc.email.includes('@')) {
-        error.value = __('Invalid Email')
-        return error.value
-      }
+      
       if (!deal.doc.status) {
         error.value = __('Status is required')
         return error.value
       }
+      
       isDealCreating.value = true
     },
     onSuccess(name) {
@@ -232,6 +280,47 @@ async function createDeal() {
       error.value = err.messages.join('\n')
     },
   })
+}
+
+function cleanRaw(number) {
+  if (!number) return ''
+  const arabic = { '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9' }
+  let n = String(number).replace(/[٠-٩]/g, d => arabic[d])
+  let out = ''
+  for (let i = 0; i < n.length; i++) {
+    if (/\d/.test(n[i]) || (n[i] === '+' && i === 0)) out += n[i]
+  }
+  return out
+}
+
+function normalizePhone(number) {
+  const n = cleanRaw(number)
+  if (!n) return ''
+
+  // Explicit country code
+  if (n.startsWith('+20'))    return '+20'  + n.slice(3)
+  if (n.startsWith('0020'))   return '+20'  + n.slice(4)
+  if (n.startsWith('+966'))   return '+966' + n.slice(4)
+  if (n.startsWith('00966'))  return '+966' + n.slice(5)
+
+  // Country code without +/00
+  if (n.startsWith('20')  && n.length === 12) return '+20'  + n.slice(2)
+  if (n.startsWith('966') && n.length === 12) return '+966' + n.slice(3)
+
+  // Local shape — uniquely identifies country
+  if (n.length === 11 && n.startsWith('01') && '0125'.includes(n[2])) return '+20'  + n.slice(1)  // Egypt mobile
+  if (n.length === 10 && n.startsWith('05'))                           return '+966' + n.slice(1)  // Saudi mobile
+  if (n.length === 10 && n[0] === '1'       && '0125'.includes(n[1])) return '+20'  + n           // Egypt mobile no-0
+  if (n.length === 10 && n[0] === '0'       && '23'.includes(n[1]))   return '+20'  + n.slice(1)  // Egypt landline
+  if (n.length === 10 && n.startsWith('01') && '1234567'.includes(n[2])) return '+966' + n.slice(1) // Saudi landline
+  if (n.length === 9  && n.startsWith('5'))                            return '+966' + n           // Saudi mobile no-0
+
+  return n // unknown — return cleaned
+}
+
+function isValidPhone(number) {
+  const e164 = normalizePhone(number)
+  return e164.startsWith('+20') || e164.startsWith('+966')
 }
 
 function openQuickEntryModal() {

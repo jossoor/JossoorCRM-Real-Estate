@@ -1133,10 +1133,20 @@ def update_doc_fields(doctype, name, fieldname):
     doc = frappe.get_doc(doctype, name)
     doc.check_permission("write")
 
-    if doctype == "CRM Lead" and "first_name" in fieldname:
-        first_name = (fieldname.get("first_name") or "").strip()
-        if not first_name:
-            frappe.throw(_("First Name is required"))
+    if doctype == "CRM Lead":
+        if "first_name" in fieldname:
+            first_name = (fieldname.get("first_name") or "").strip()
+            if not first_name:
+                frappe.throw(_("First Name is required"))
+
+        if any(k in fieldname for k in ["first_name", "middle_name", "last_name", "salutation", "organization"]):
+            for key, value in fieldname.items():
+                doc.set(key, value)
+            doc.set_full_name()
+            doc.set_lead_name()
+            doc.set_title()
+            fieldname["lead_name"] = doc.lead_name
+            fieldname["title"] = doc.title
 
     # Update fields using db_set to bypass mandatory checks for unrelated fields
     for key, value in fieldname.items():
