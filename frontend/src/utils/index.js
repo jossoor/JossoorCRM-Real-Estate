@@ -721,3 +721,6 @@ export function sanitizeHTML(html) {
   div.innerHTML = html
   return div.textContent || div.innerText || ''
 }
+export function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj))
+}

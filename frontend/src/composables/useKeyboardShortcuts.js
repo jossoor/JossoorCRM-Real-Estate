@@ -1,5 +1,5 @@
 import { onMounted, onBeforeUnmount, unref } from 'vue'
-import { isDialogOpen } from '@/utils/dialogs'
+import { isDialogOpen } from '@/utils/dialogs.jsx'
 
 /**
  * Generic global keyboard shortcuts composable.
