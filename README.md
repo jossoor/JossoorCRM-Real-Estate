@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/logo.svg" height="80" alt="JossoorCRM Logo">
+<img src=".github/logo.png" height="120" alt="JossoorCRM Logo">
 
 # JossoorCRM
 
@@ -32,9 +32,16 @@ Smart lead management with duplicate detection, custom filters by project, statu
 ---
 
 ### Analytics Dashboard
-Real-time performance dashboard with forecasting KPIs, task completion rates, and role-based data scoping for sales users vs. managers.
+Real-time performance dashboard with Leads Performance KPIs, Lead Status Funnel, Pipeline Distribution donut chart, Activity Breakdown, and Leads by Status — all filterable by date range and sales user.
 
 ![Dashboard](.github/screenshots/dashboard.png)
+
+---
+
+### Inventory
+Visual project cards showing cover image, location, developer, available units, total units, and category. Filter by location and status across 14+ real estate projects.
+
+![Inventory](.github/screenshots/inventory.png)
 
 ---
 
