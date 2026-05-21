@@ -1,204 +1,180 @@
-<div align="center" markdown="1">
+<div align="center">
 
-<a href="https://frappe.io/products/crm">
-    <img src=".github/logo.svg" height="80" alt="Frappe CRM Logo">
-</a>
+<img src=".github/logo.svg" height="80" alt="JossoorCRM Logo">
 
-<h1>Frappe CRM</h1>
+# JossoorCRM
 
-**Simplify Sales, Amplify Relationships**
+**Real Estate CRM Built for the Egyptian Market**
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/frappe/crm)](https://github.com/frappe/crm/releases)
+*A powerful, customized CRM tailored for real estate sales teams — built on Frappe CRM*
 
-<div>
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/FrappeCRMHeroImage.png">
-        <img width="1402" alt="Frappe CRM Hero Image" src=".github/screenshots/FrappeCRMHeroImage.png">
-    </picture>
-</div>
-
-[Live Demo](https://frappecrm-demo.frappe.cloud/api/method/crm.api.demo.login) - [Website](https://frappe.io/crm) - [Documentation](https://docs.frappe.io/crm)
+[![GitHub](https://img.shields.io/badge/github-JossoorCRM--Upgraded-blue?logo=github)](https://github.com/hebashaaban23/JossoorCRM-Upgraded)
+[![Frappe](https://img.shields.io/badge/Built%20on-Frappe%20Framework-blue)](https://frappe.io)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 
 </div>
 
-## Frappe CRM
+---
 
-Frappe CRM is a simple, affordable, open-source CRM tool designed for modern sales teams with unlimited users. Frappe CRM is crafted for providing a great user experience, packed with features for core CRM activities helping you build strong customer relationships while keeping things clean and organised.
+## What is JossoorCRM?
 
-### Motivation
+JossoorCRM is a fully customized fork of [Frappe CRM](https://github.com/frappe/crm), purpose-built for Egyptian real estate companies. It extends the base CRM with a complete property inventory system, reservation pipeline, sales team management, and mobile push notifications — all designed around the workflows of real estate sales agents and managers.
 
-The motivation behind building Frappe CRM stems from the need for a simple, customizable, and open-source solution tailored to modern business needs. Many existing CRMs are either too complex, overly generic, or locked behind steep pricing models that hinder accessibility and flexibility. Frappe CRM was designed to bridge this gap, offering a tool that empowers businesses to manage their customer relationships seamlessly while being easy to adapt to specific workflows. Built on the Frappe framework, it prioritizes usability, extensibility, and affordability, making it an ideal choice for growing teams and organizations looking for a CRM that aligns with their unique processes.
+---
 
-### Key Features
+## Screenshots
 
--   **User-Friendly and Flexible:** A simple, intuitive interface that’s easy to navigate and highly customizable, enabling teams to adapt it to their specific processes effortlessly.
--   **All-in-One Lead/Deal Page:** Consolidate all essential actions and details—like activities, comments, notes, tasks, and more—into a single page for a seamless workflow experience.
--   **Kanban View:** Manage leads and deals visually with a drag-and-drop Kanban board, offering clarity and efficiency in tracking progress across stages.
--   **Custom Views:** Design personalized views to organize and display leads and deals using custom filters, sorting, and columns, ensuring quick access to the most relevant information.
+### Leads List
+Smart lead management with duplicate detection, custom filters by project, status, and last contact date.
 
-    <details>
-    <summary>Screenshots</summary>
+![Leads List](.github/screenshots/leads_list.png)
 
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/LeadList.png">
-            <img width="1402" alt="Lead List" src=".github/screenshots/LeadList.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/LeadPage.png">
-            <img width="1402" alt="Lead Page" src=".github/screenshots/LeadPage.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/EmailTemplate.png">
-            <img width="1402" alt="Email Template" src=".github/screenshots/EmailTemplate.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/CallUI.png">
-            <img width="1402" alt="Call UI" src=".github/screenshots/CallUI.png">
-        </picture>
-    </div>
-    <div>
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/CallLog.png">
-            <img width="1402" alt="Call Log" src=".github/screenshots/CallLog.png">
-        </picture>
-    </div>
+---
 
-    </details>
+### Analytics Dashboard
+Real-time performance dashboard with forecasting KPIs, task completion rates, and role-based data scoping for sales users vs. managers.
 
-### Integrations
+![Dashboard](.github/screenshots/dashboard.png)
 
--   **Twilio:** Integrate Twilio to make and receive calls from the CRM. You can also record calls. It is a built-in integration.
--   **Exotel:** Integrate Exotel to make and receive calls via agents mobile phone from the CRM. You can also record calls. It is a built-in integration.
--   **WhatsApp:** Integrate WhatsApp to send and receive messages from the CRM. [Frappe WhatsApp](https://github.com/shridarpatil/frappe_whatsapp) is used for this integration.
--   **ERPNext:** Integrate with [ERPNext](https://erpnext.com) to extend the CRM capabilities to include invoicing, accounting, and more.
+---
 
-### Under the Hood
+### Reservations
+Full reservation pipeline tracking — from lead to unit reservation to deal closure, with automatic CRM Deal creation on status change.
 
-- [Frappe Framework](https://github.com/frappe/frappe): A full-stack web application framework.
-- [Frappe UI](https://github.com/frappe/frappe-ui): A Vue-based UI library, to provide a modern user interface.
+![Reservations](.github/screenshots/reservations.png)
 
-### Compatibility
-This app is compatible with the following versions of Frappe and ERPNext:
+---
 
-| CRM branch            | Stability | Frappe branch        | ERPNext branch       |
-| :-------------------- | :-------- | :------------------- | :------------------- |
-| main - v1.x           | stable    | v15.x                | v15.x                |
-| develop - future/v2.x | unstable  | develop - future/v16 | develop - future/v16 |
+## Key Features
 
-## Getting Started (Production)
+### 🏢 Real Estate Inventory
+- **Projects & Units** — manage real estate projects with phases, units, pricing, and availability
+- **Phase-based visibility** — agents see only units from active phases; managers control which phases are open
+- **Unit Pricing Validation** — backend guards against unrealistic area and price values
 
-### Managed Hosting
+### 👥 Lead Management
+- **Duplicate detection** — automatic Egyptian phone number normalization (+20, 0020, 01x) with deduplication on insert
+- **Property preferences** — 20+ preference fields per lead (city, region, type, bedrooms, price range, payment method, etc.)
+- **Activity log** — every field change auto-logged as a timeline activity
 
-Get started with your personal or business site with a few clicks on Frappe Cloud - our official hosting service.
-<div>
-	<a href="https://frappecloud.com/crm/signup" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
-			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
-		</picture>
-	</a>
-</div>
+### 📋 Reservation Pipeline
+- **Reservation → Deal flow** — when a reservation reaches "Deal Done", a CRM Deal is automatically created with all data copied over
+- **Payment plans** — installment schedule management linked to reservations
+- **Status tracking** — full audit trail from Reserved → Deal Done → Closed
 
-### Self Hosting
+### 📊 Analytics Dashboard
+- **Leads performance** — new leads, conversion rates, sources
+- **Inventory performance** — units available, reserved, sold per project
+- **Tasks performance** — completion rates, overdue tasks, by type and priority
+- **Role-based scoping** — sales agents see only their own data; team leaders see their team
 
-Follow these steps to set up Frappe CRM in production:
+### 🔔 Mobile Push Notifications
+- **Firebase FCM** — push notifications to the JossoorCRM Flutter mobile app
+- **Real-time bell** — in-app notification center for assignments, mentions, and alerts
+- **Reminder system** — delayed follow-up detection with per-minute overdue flagging
 
-**Step 1**: Download the easy install script
+### 👨‍💼 Sales Team Management
+- **Teams & Members** — team leaders with member assignment
+- **Permission isolation** — agents see only their leads; team leaders see their team's leads
+- **Assignment tracking** — lead ownership with DocShare enforcement
 
-```bash
-wget https://frappe.io/easy-install.py
+### 📱 Mobile App Support
+- **Flutter integration** — FCM token registration per device
+- **One device = one user** — automatic token reassignment on login switch
+- **Mobile OAuth** — dedicated mobile login settings
+
+---
+
+## Architecture
+
+```
+JossoorCRM
+├── Real Estate Domain
+│   ├── Real Estate Project    (master project record)
+│   ├── Project Unit           (unit with phase + pricing)
+│   ├── Reservation            (lead → unit → deal pipeline)
+│   └── Payment Plan           (installment schedules)
+│
+├── CRM Extensions
+│   ├── CRM Lead               (+ property preferences + duplicate detection)
+│   ├── CRM Deal               (+ payment plan snapshot + reservation link)
+│   └── CRM Task               (+ task types + multi-user assignment)
+│
+├── Team System
+│   ├── Team                   (team leader + members)
+│   └── Custom Permissions     (agent/leader/manager scoping)
+│
+└── Notifications
+    ├── Firebase FCM            (mobile push)
+    ├── CRM Notification        (in-app bell)
+    └── Reminder Runner         (overdue follow-up detection)
 ```
 
-**Step 2**: Run the deployment command
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python, Frappe Framework v15 |
+| Frontend | Vue 3, Vite, Pinia, frappe-ui |
+| Mobile | Flutter (FCM push notifications) |
+| Database | MariaDB |
+| Queue | Redis + RQ |
+| Push | Firebase Cloud Messaging (FCM v1) |
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Frappe Bench set up ([installation guide](https://docs.frappe.io/framework/user/en/installation))
+- Python 3.10+
+- Node.js 18+
+
+### Installation
 
 ```bash
-python3 ./easy-install.py deploy \
-    --project=crm_prod_setup \
-    --email=email.example.com \
-    --image=ghcr.io/frappe/crm \
-    --version=stable \
-    --app=crm \
-    --sitename subdomain.domain.tld
+# Get the app
+bench get-app https://github.com/hebashaaban23/JossoorCRM-Upgraded.git
+
+# Install on your site
+bench --site your-site.com install-app crm
+
+# Build frontend
+bench build --app crm
+
+# Restart
+bench restart
 ```
 
-Replace the following parameters with your values:
+### Firebase Setup (for mobile push notifications)
 
--   `email.example.com`: Your email address
--   `subdomain.domain.tld`: Your domain name where CRM will be hosted
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Generate a service account key: Project Settings → Service Accounts → Generate new private key
+3. In Frappe desk, go to **FCM Notification Settings** and fill in the credentials
+4. The Flutter app's `google-services.json` must point to the same Firebase project
 
-The script will set up a production-ready instance of Frappe CRM with all the necessary configurations in about 5 minutes.
+---
 
-## Getting Started (Development)
+## Compatibility
 
-### Local Setup
+| JossoorCRM | Frappe | ERPNext |
+|---|---|---|
+| main | v15.x | v15.x (optional) |
 
-1. [Setup Bench](https://docs.frappe.io/framework/user/en/installation).
-1. In the frappe-bench directory, run `bench start` and keep it running.
-1. Open a new terminal session and cd into `frappe-bench` directory and run following commands:
-    ```sh
-    $ bench get-app crm
-    $ bench new-site sitename.localhost --install-app crm
-    $ bench browse sitename.localhost --user Administrator
-    ```
-1. Access the crm page at `sitename.localhost:8000/crm` in your web browser.
+---
 
-**For Frontend Development**
-1. Open a new terminal session and cd into `frappe-bench/apps/crm`, and run the following commands:
-    ```
-    yarn install
-    yarn dev
-    ```
-1. Now, you can access the site on vite dev server at `http://sitename.localhost:8080`
+## Credits
 
-**Note:** You'll find all the code related to Frappe CRM's frontend inside `frappe-bench/apps/crm/frontend`
+Built on top of [Frappe CRM](https://github.com/frappe/crm) by [Frappe Technologies](https://frappe.io).
 
-### Docker
+Customized and extended for Egyptian real estate by the Benchmark Arabia team.
 
-You need Docker, docker-compose and git setup on your machine. Refer [Docker documentation](https://docs.docker.com/). After that, follow below steps:
+---
 
-**Step 1**: Setup folder and download the required files
+<div align="center">
 
-    mkdir frappe-crm
-    cd frappe-crm
+**[benchmarkarabia.jossoor.org](https://benchmarkarabia.jossoor.org/crm)**
 
-    # Download the docker-compose file
-    wget -O docker-compose.yml https://raw.githubusercontent.com/frappe/crm/develop/docker/docker-compose.yml
-
-    # Download the setup script
-    wget -O init.sh https://raw.githubusercontent.com/frappe/crm/develop/docker/init.sh
-
-**Step 2**: Run the container and daemonize it
-
-    docker compose up -d
-
-**Step 3**: The site [http://crm.localhost:8000/crm](http://crm.localhost:8000/crm) should now be available. The default credentials are:
-
--   Username: Administrator
--   Password: admin
-
-## Learn and connect
-
--   [Telegram Public Group](https://t.me/frappecrm)
--   [Discuss Forum](https://discuss.frappe.io/c/frappe-crm)
--   [Documentation](https://docs.frappe.io/crm)
--   [YouTube](https://www.youtube.com/channel/UCn3bV5kx77HsVwtnlCeEi_A)
--   [X/Twitter](https://x.com/frappetech)
-
-<br>
-<br>
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
-		</picture>
-	</a>
 </div>
-# JossoorCRM-Upgraded
