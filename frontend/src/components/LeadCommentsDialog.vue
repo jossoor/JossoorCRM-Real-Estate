@@ -223,7 +223,7 @@ async function saveEdit() {
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="emit('update:show', false)"></div>
 
       <!-- Modal Content -->
-      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-visible flex flex-col max-h-[90vh]">
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-visible flex flex-col max-h-[90vh]">
         
         <!-- Close Button -->
         <button 

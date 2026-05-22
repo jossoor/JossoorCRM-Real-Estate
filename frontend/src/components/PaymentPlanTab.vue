@@ -80,7 +80,17 @@
           <!-- Lead (CRM Lead only) -->
           <div class="md:col-span-6">
             <div class="text-xs text-gray-500 mb-1">{{ __('Lead') }}</div>
+            <div
+              v-if="inLeadContext"
+              class="flex min-h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+            >
+              <div class="min-w-0">
+                <div class="truncate text-sm font-medium text-gray-900">{{ leadLabel || ctxDocName }}</div>
+                <div class="text-xs text-gray-500">{{ ctxDocName }}</div>
+              </div>
+            </div>
             <FormControl
+              v-else
               type="autocomplete"
               :placeholder="__('Search CRM Lead by name, email, phone…')"
               v-model="leadModel"
@@ -91,11 +101,10 @@
               @search="onLeadSearch"
               @change="onLeadPicked"
               @focus="loadLeadRecents"
-              :disabled="inLeadContext"
               clearable
               autocomplete="off"
             />
-            <div v-if="leadLabel" class="text-xs mt-1 opacity-70">
+            <div v-if="!inLeadContext && leadLabel" class="text-xs mt-1 opacity-70">
               {{ __('Selected') }}: {{ leadLabel }}
             </div>
           </div>

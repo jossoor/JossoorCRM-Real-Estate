@@ -303,15 +303,36 @@ function normalizeDatetime(val) {
 function getDefaultReminderFromDueDate(val) {
   if (!val) return null
 
-  const due = typeof val === 'string' ? new Date(val) : new Date(val)
-  if (Number.isNaN(due.getTime())) return null
+  const due =
+    typeof val === 'string'
+      ? new Date(val)
+      : new Date(val)
+
+  if (Number.isNaN(due.getTime())) {
+    return null
+  }
+
+  const now = new Date()
 
   const reminder = new Date(due)
+
+  // default = 1 day before
   reminder.setDate(reminder.getDate() - 1)
 
-  // fallback if somehow not before due date
+  // if reminder becomes past,
+  // fallback to 1 hour from now
+  if (reminder <= now) {
+    reminder.setTime(now.getTime() + 60 * 60 * 1000)
+  }
+
+  // still ensure reminder < due date
   if (reminder >= due) {
     reminder.setTime(due.getTime() - 60 * 60 * 1000)
+  }
+
+  // final protection
+  if (reminder >= due) {
+    return null
   }
 
   return reminder
