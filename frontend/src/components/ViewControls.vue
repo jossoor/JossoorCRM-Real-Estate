@@ -342,6 +342,9 @@ import Draggable from 'vuedraggable'
 import _ from 'lodash'
 import ImportIcon from '~icons/lucide/import'
 
+const MIN_COLUMN_WIDTH_REM = 3
+const MAX_COLUMN_WIDTH_REM = 50
+
 const props = defineProps({
   doctype: { type: String, required: true },
   filters: { type: Object, default: () => ({}) },
@@ -893,6 +896,19 @@ function updateGroupBy(group_by_field) {
   }
 }
 
+function sanitizeColumnWidth(width) {
+  const n = Number(width)
+
+  if (!Number.isFinite(n)) {
+    return MIN_COLUMN_WIDTH_REM
+  }
+
+  return Math.min(
+    MAX_COLUMN_WIDTH_REM,
+    Math.max(MIN_COLUMN_WIDTH_REM, n)
+  )
+}
+
 function updateColumns(obj) {
   if (!obj) {
     obj = {
@@ -900,6 +916,16 @@ function updateColumns(obj) {
       rows: list.value.data.rows,
       isDefault: false,
     }
+  }
+
+  if (obj?.columns?.length) {
+    obj.columns = obj.columns.map((column) => {
+      if (column.width) {
+        column.width = sanitizeColumnWidth(column.width)
+      }
+
+      return column
+    })
   }
 
   if (!defaultParams.value) {

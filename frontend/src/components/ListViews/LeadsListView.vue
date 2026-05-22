@@ -53,7 +53,7 @@
       >
         <ListRowItem :item="item" :align="column.align">
           <template #default>
-            <LeadCommentsQuick class="w-full" :leadName="row.name" :commentText="row.last_comment" />
+            <LeadLatestCommentCell class="w-full" :leadName="row.name" :fallbackText="row.last_comment" />
           </template>
         </ListRowItem>
       </div>
@@ -348,7 +348,7 @@
 
 <script setup>
 import CustomListFooter from '@/components/CustomListFooter.vue'
-import LeadCommentsQuick from '@/components/LeadCommentsQuick.vue'
+import LeadLatestCommentCell from '@/components/LeadLatestCommentCell.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import MultipleAvatar from '@/components/MultipleAvatar.vue'

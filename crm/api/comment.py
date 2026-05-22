@@ -230,7 +230,7 @@ def list_for_doc(doctype: str, name: str) -> list[dict]:
             "reference_name": name,
             "comment_type": "Comment",
         },
-        fields=["name", "content", "creation", "owner", "comment_email", "comment_by", "delayed"],
+        fields=["name", "subject", "content", "creation", "owner", "comment_email", "comment_by", "comment_type", "delayed"],
         order_by="creation desc",
     )
 
