@@ -20,14 +20,13 @@
           <h2 class="text-xl font-semibold text-ink-gray-8">
             {{ __('Activity') }}
           </h2>
-          <button
-            v-if="!hasActivity"
-            @click="showFeedbackModal = true"
-            class="px-3 py-1.5 bg-[#1a1c2e] text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors flex items-center gap-1"
-          >
-            <span class="text-sm">+</span>
-            {{ __('Add Activity') }}
-          </button>
+          <LeadCommentsQuick
+            v-if="props.docname"
+            :leadName="props.docname"
+            buttonOnly
+            :triggerLabel="__('Add Activity')"
+            @saved="loadActivities"
+          />
         </div>
 
         <!-- Search and Filters -->
@@ -118,15 +117,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Feedback Modal -->
-    <LeadCommentsDialog
-      v-if="showFeedbackModal"
-      v-model:show="showFeedbackModal"
-      :doctype="doctype"
-      :name="docname"
-      @update:show="(val) => { showFeedbackModal = val; if (!val) loadActivities(); }"
-    />
   </div>
 </template>
 
@@ -142,7 +132,7 @@ import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import AddressIcon from '@/components/Icons/AddressIcon.vue'
 import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
-import LeadCommentsDialog from '@/components/LeadCommentsDialog.vue'
+import LeadCommentsQuick from '@/components/LeadCommentsQuick.vue'
 
 const props = defineProps({
   leadData: {
@@ -178,8 +168,6 @@ const activities = ref([])
 const reminders = ref([])
 const searchQuery = ref('')
 const selectedType = ref('All')
-const showFeedbackModal = ref(false)
-const hasActivity = computed(() => activities.value.length > 0)
 
 
 const activityTypeOptions = [

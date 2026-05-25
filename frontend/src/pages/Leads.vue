@@ -23,6 +23,7 @@
 
   <!-- Quick Filters Bar -->
   <QuickFiltersBar
+    v-if="SHOW_QUICK_FILTERS"
     v-model="ui"
     :status-list="statusList"
     :project-list="projectList"
@@ -305,6 +306,7 @@
 
 <script setup>
 const SHOW_LEAD_FILTERS = true
+const SHOW_QUICK_FILTERS = false
 
 import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import MultipleAvatar from '@/components/MultipleAvatar.vue'
@@ -1385,7 +1387,7 @@ watch(
         key: 'last_comment',
         label: __('Latest Comment'),
         type: 'Data',
-        width: 300,
+        width: 380,
       })
     }
 

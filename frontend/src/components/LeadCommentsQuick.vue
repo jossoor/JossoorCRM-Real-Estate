@@ -1,9 +1,24 @@
 <template>
   <div class="relative w-full" @click.stop @mousedown.stop @dblclick.stop>
     <!-- العرض المختصر -->
-    <div v-if="!open" class="flex items-center justify-between gap-2 overflow-hidden w-full h-8">
-      <div class="truncate whitespace-nowrap text-ink-gray-9 flex-1 min-w-0 pr-2">
-        {{ lastCommentText || __('No FeedBacks yet') }}
+    <div v-if="!open && buttonOnly" class="inline-flex">
+      <button
+        type="button"
+        class="px-3 py-1.5 bg-[#1a1c2e] text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors"
+        @click.stop="toggle(true)"
+      >
+        {{ triggerLabel || __('Add Activity') }}
+      </button>
+    </div>
+
+    <div v-else-if="!open" class="flex items-center justify-between gap-2 overflow-hidden w-full h-8">
+      <div class="flex-1 min-w-0 max-w-[20rem] pr-2 overflow-hidden">
+        <div
+          class="text-ink-gray-9 whitespace-pre-wrap break-words"
+          style="overflow-wrap:anywhere;word-break:break-word;"
+        >
+          {{ lastCommentText || __('No FeedBacks yet') }}
+        </div>
       </div>
       <button
         type="button"
@@ -109,7 +124,11 @@ const typeOptions = FEEDBACK_TYPES
 const props = defineProps({
   leadName: { type: String, required: true },
   commentText: { type: String, default: '' },
+  buttonOnly: { type: Boolean, default: false },
+  triggerLabel: { type: String, default: '' },
 })
+
+const emit = defineEmits(['saved'])
 
 const open = ref(false)
 const loading = ref(false)
@@ -275,25 +294,6 @@ async function addComment() {
 
   try {
 
-    const existing = await call('frappe.client.get_list', {
-      doctype: 'Comment',
-      fields: ['name'],
-      filters: [
-        ['Comment', 'reference_doctype', '=', 'CRM Lead'],
-        ['Comment', 'reference_name', '=', props.leadName],
-        ['Comment', 'comment_type', '=', 'Comment']
-      ],
-      limit_page_length: 1,
-    })
-
-    const existingComments = Array.isArray(existing?.message)
-      ? existing.message
-      : (Array.isArray(existing) ? existing : [])
-
-    if (existingComments.length > 0) {
-      toast.error(__('Activity already exists for this lead'))
-      return
-    }
     // ✅ SAME METHOD USED INTERNALLY BY FRAPPE
     const res = await call('frappe.client.insert', {
       doc: {
@@ -335,6 +335,7 @@ async function addComment() {
       loadComments(),
       loadReminders()
     ])
+    emit('saved')
 
   } catch (e) {
 
