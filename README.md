@@ -8,7 +8,7 @@
 
 *A powerful, customized CRM tailored for real estate sales teams — built on Frappe CRM*
 
-[![GitHub](https://img.shields.io/badge/github-JossoorCRM--Upgraded-blue?logo=github)](https://github.com/hebashaaban23/JossoorCRM-Upgraded)
+[![GitHub](https://img.shields.io/badge/github-JossoorCRM--Upgraded-blue?logo=github)](https://github.com/jossoor/JossoorCRM-Real-Estate.git)
 [![Frappe](https://img.shields.io/badge/Built%20on-Frappe%20Framework-blue)](https://frappe.io)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 
