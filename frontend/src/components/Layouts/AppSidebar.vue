@@ -288,7 +288,7 @@ const mainLinks = computed(() => {
     { label: 'Deals',        icon: DealsIcon,             to: { name: 'Deals'        }                           },
     { label: 'Reservations', icon: LucideArchive,         to: { name: 'Reservations' }                           },
     { label: 'Inventory',    icon: LucideArchive,         to: { name: 'Inventory'    }, views: inventorySubLinks },
-    { label: 'Contacts',     icon: ContactsIcon,          to: { name: 'Contacts'     }                           },
+    //{ label: 'Contacts',     icon: ContactsIcon,          to: { name: 'Contacts'     }                           },
     { label: 'Notes',        icon: NoteIcon,              to: { name: 'Notes'        }                           },
      {label: 'Calendar',     icon: CalendarIcon,          to: {name : 'Calendar'     }                               },
     { label: 'Tasks',        icon: TaskIcon,              to: { name: 'Tasks'        }                           },

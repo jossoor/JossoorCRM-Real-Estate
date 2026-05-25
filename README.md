@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/logo.png" height="120" alt="JossoorCRM Logo">
+<img src=".github/logo.svg" height="120" alt="JossoorCRM Logo">
 
 # JossoorCRM
 

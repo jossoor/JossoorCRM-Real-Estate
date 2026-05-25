@@ -126,12 +126,12 @@ const routes = [
     name: 'Tasks',
     component: () => import('@/pages/Tasks.vue'),
   },
-  {
-    alias: '/contacts',
-    path: '/contacts/view/:viewType?',
-    name: 'Contacts',
-    component: () => import('@/pages/Contacts.vue'),
-  },
+ // {
+  //  alias: '/contacts',
+  //  path: '/contacts/view/:viewType?',
+  //  name: 'Contacts',
+   // component: () => import('@/pages/Contacts.vue'),
+  //},
   {
     path: '/contacts/:contactId',
     name: 'Contact',
